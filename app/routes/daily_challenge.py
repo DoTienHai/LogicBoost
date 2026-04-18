@@ -1,5 +1,5 @@
 """Daily Challenge routes."""
-from flask import Blueprint, render_template, request, jsonify
+from flask import Blueprint, render_template, request, jsonify, current_app
 from app.models import Question, UserAnswer, Stats, db
 
 daily_challenge_bp = Blueprint("daily_challenge", __name__, url_prefix="/daily-challenge")
@@ -13,14 +13,15 @@ def index():
 
 @daily_challenge_bp.route("/start")
 def start():
-    """Start daily challenge session."""
-    # Get 3-5 random questions with increasing difficulty
-    questions = Question.query.filter_by(mode="daily_challenge").all()
+    """Start daily challenge session - load exactly 5 questions."""
+    # Get 5 random questions
+    num_questions = current_app.config['MAX_QUESTIONS_PER_DAILY']
+    questions = Question.query.filter_by(mode="daily_challenge").limit(num_questions).all()
     return render_template(
         "daily_challenge/question.html",
         question_id=questions[0].id if questions else None,
         question_number=1,
-        total_questions=len(questions),
+        total_questions=num_questions,
     )
 
 

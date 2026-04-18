@@ -563,17 +563,18 @@ def import_from_excel(filepath):
 ## 🎮 Feature Specifications
 
 ### 1. 📅 Daily Challenges
-- Exactly **3–5 questions** per daily set
+- Exactly **5 questions** per daily set
 - Difficulty increases: Easy → Medium → Hard
-- Estimated completion time: **5–7 minutes**
+- Estimated completion time: **7–10 minutes**
 - New question set every day
 - Summary screen: score, time taken, wrong answer review
 
 ### 2. ⚡ Quick Mini Games
 - Each problem solvable in **30–60 seconds**
-- Score based on **speed + accuracy**
-- Modes: Speed Round / Sudden Death / Beat Your Best
+- Answer questions continuously until you get one wrong (Sudden Death mode)
+- Score = number of correct answers in a row
 - Large countdown timer, instant visual feedback
+- Immediate game over on first wrong answer
 
 ### 3. 🌍 Real-world Problems
 - Sub-categories: **Finance / Career / Business**

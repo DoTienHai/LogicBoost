@@ -1,26 +1,364 @@
-"""Mini Game - play template."""
 {% extends "base.html" %}
 
-{% block title %}Playing - Mini Game - LogicBoost{% endblock %}
+{% block title %}Playing - Quick Mini Game - LogicBoost{% endblock %}
 
 {% block content %}
 <div class="mini-game-play-container">
-    <div class="game-timer">
-        <h2>Time: <span id="timer">60</span>s</h2>
+    <!-- Game Header -->
+    <div class="game-header">
+        <div class="timer-box">
+            <div class="timer" id="timer">60</div>
+            <span class="timer-label">seconds</span>
+        </div>
+        <div class="score-box">
+            <span class="score-label">Score:</span>
+            <span class="score" id="score">0</span>
+        </div>
     </div>
 
-    <p>This is Mini Game Play Page - Question ID: {{ question_id }}</p>
-
-    <div class="game-question">
-        <h3>Sample Question</h3>
-        <p>Solve this quickly!</p>
-        
-        <input type="text" id="answer" placeholder="Type your answer..." autofocus>
-        <button onclick="submitAnswer()" class="btn btn-primary">Submit</button>
+    <!-- Question Display -->
+    <div class="question-section" id="question-section">
+        <div id="loading" class="loading">Loading question...</div>
     </div>
 
-    <div class="navigation">
-        <a href="{{ url_for('mini_game.index') }}" class="btn btn-secondary">Back to Lobby</a>
+    <!-- Answer Input Area -->
+    <div class="answer-section" id="answer-section" style="display: none;">
+        <div class="options" id="options"></div>
+        <input type="text" id="text-answer" placeholder="Type your answer..." style="display: none;">
+        <button onclick="submitAnswer()" class="btn btn-primary btn-large">Submit Answer</button>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="game-over-screen" class="game-over-screen" style="display: none;">
+        <h2>Game Over!</h2>
+        <div class="final-score">
+            <p>Your Score: <span id="final-score">0</span></p>
+        </div>
+        <div class="answer-review" id="answer-review"></div>
+        <div class="buttons">
+            <button onclick="playAgain()" class="btn btn-primary">Play Again</button>
+            <a href="{{ url_for('mini_game.index') }}" class="btn btn-secondary">Back to Lobby</a>
+        </div>
     </div>
 </div>
+
+<script>
+let currentQuestion = null;
+let timeRemaining = 60;
+let currentScore = 0;
+let gameActive = true;
+let timerInterval = null;
+
+// Load first question
+loadQuestion();
+
+// Start timer
+startTimer();
+
+function startTimer() {
+    timerInterval = setInterval(() => {
+        timeRemaining--;
+        document.getElementById('timer').textContent = timeRemaining;
+        
+        if (timeRemaining <= 0) {
+            clearInterval(timerInterval);
+            endGame();
+        }
+    }, 1000);
+}
+
+function loadQuestion() {
+    fetch('{{ url_for("mini_game.question") }}')
+        .then(res => res.json())
+        .then(data => {
+            currentQuestion = data;
+            timeRemaining = data.time_limit || 60;
+            displayQuestion(data);
+        })
+        .catch(err => {
+            document.getElementById('loading').innerHTML = 'Error loading question';
+            console.error(err);
+        });
+}
+
+function displayQuestion(question) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('answer-section').style.display = 'block';
+    
+    // Display question
+    const questionHtml = `
+        <h3>${question.title || 'Question'}</h3>
+        <div class="question-content">
+            ${question.question_image ? `<img src="/static/images/questions/${question.question_image}" alt="Question image">` : ''}
+            <p>${question.question}</p>
+        </div>
+    `;
+    document.getElementById('question-section').innerHTML = questionHtml;
+    
+    // Display answer options
+    const optionsContainer = document.getElementById('options');
+    if (question.option_a) {
+        // Multiple choice
+        const options = [
+            {key: 'a', text: question.option_a},
+            {key: 'b', text: question.option_b},
+            {key: 'c', text: question.option_c},
+            {key: 'd', text: question.option_d},
+        ];
+        
+        optionsContainer.innerHTML = options.map(opt => `
+            <button class="option-btn" onclick="selectAnswer('${opt.key}')">
+                <span class="option-letter">${opt.key.toUpperCase()}</span>
+                <span class="option-text">${opt.text}</span>
+            </button>
+        `).join('');
+        
+        document.getElementById('text-answer').style.display = 'none';
+    } else {
+        // Free text input
+        optionsContainer.innerHTML = '';
+        document.getElementById('text-answer').style.display = 'block';
+        document.getElementById('text-answer').focus();
+    }
+}
+
+function selectAnswer(key) {
+    document.getElementById('text-answer').value = key;
+    submitAnswer();
+}
+
+function submitAnswer() {
+    if (!gameActive) return;
+    
+    const answer = document.getElementById('text-answer').value || 
+                   document.querySelector('.option-btn.selected')?.getAttribute('data-answer');
+    
+    if (!answer) {
+        alert('Please select or type an answer');
+        return;
+    }
+    
+    const startTime = Date.now();
+    const timeUsed = 60 - timeRemaining;
+    
+    fetch('{{ url_for("mini_game.submit_answer") }}', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            question_id: currentQuestion.id,
+            answer: answer,
+            time_taken: timeUsed
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.game_over) {
+            // Wrong answer - Game Over
+            currentScore = data.score;
+            endGame(data);
+        } else {
+            // Correct answer - Load next question
+            currentScore = data.score;
+            document.getElementById('score').textContent = currentScore;
+            document.getElementById('text-answer').value = '';
+            timeRemaining = 60;
+            loadQuestion();
+        }
+    })
+    .catch(err => {
+        alert('Error submitting answer');
+        console.error(err);
+    });
+}
+
+function endGame(wrongAnswerData = null) {
+    gameActive = false;
+    clearInterval(timerInterval);
+    document.getElementById('answer-section').style.display = 'none';
+    
+    const gameOverScreen = document.getElementById('game-over-screen');
+    gameOverScreen.style.display = 'block';
+    document.getElementById('final-score').textContent = currentScore;
+    
+    if (wrongAnswerData) {
+        const reviewHtml = `
+            <div class="wrong-answer">
+                <h4>Last Question (Wrong Answer)</h4>
+                <p><strong>Your answer:</strong> ${wrongAnswerData.chosen}</p>
+                <p><strong>Correct answer:</strong> ${wrongAnswerData.correct_answer}</p>
+            </div>
+        `;
+        document.getElementById('answer-review').innerHTML = reviewHtml;
+    }
+}
+
+function playAgain() {
+    location.reload();
+}
+</script>
+
+<style>
+.mini-game-play-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.timer-box {
+    text-align: center;
+}
+
+.timer {
+    font-size: 48px;
+    font-weight: bold;
+    color: #dc3545;
+    min-width: 80px;
+}
+
+.timer-label {
+    display: block;
+    color: #666;
+    font-size: 14px;
+}
+
+.score-box {
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.score {
+    color: #28a745;
+    margin-left: 10px;
+}
+
+.question-section {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 30px;
+    margin-bottom: 20px;
+}
+
+.question-content {
+    font-size: 18px;
+    line-height: 1.6;
+}
+
+.question-content img {
+    max-width: 100%;
+    margin: 15px 0;
+    border-radius: 4px;
+}
+
+.answer-section {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.options {
+    display: grid;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.option-btn {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    background: #f8f9fa;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.3s;
+}
+
+.option-btn:hover {
+    background: #e9ecef;
+    border-color: #007bff;
+}
+
+.option-letter {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: #007bff;
+    color: white;
+    border-radius: 50%;
+    margin-right: 15px;
+    font-weight: bold;
+}
+
+.option-text {
+    flex: 1;
+    font-size: 16px;
+}
+
+#text-answer {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 20px;
+}
+
+.game-over-screen {
+    background: white;
+    border: 2px solid #dc3545;
+    border-radius: 8px;
+    padding: 40px;
+    text-align: center;
+}
+
+.game-over-screen h2 {
+    color: #dc3545;
+    margin-bottom: 30px;
+}
+
+.final-score {
+    font-size: 32px;
+    font-weight: bold;
+    color: #28a745;
+    margin: 30px 0;
+}
+
+.answer-review {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 4px;
+    margin: 20px 0;
+    text-align: left;
+}
+
+.wrong-answer {
+    color: #dc3545;
+}
+
+.buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 30px;
+}
+
+.btn-large {
+    padding: 12px 30px;
+    font-size: 16px;
+}
+</style>
 {% endblock %}

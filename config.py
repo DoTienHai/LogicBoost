@@ -26,6 +26,10 @@ class Config:
     SECRET_KEY = os.getenv("SECRET_KEY", "dev-key")
     SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", _get_database_uri())
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    
+    # Feature configuration
+    MAX_QUESTIONS_PER_DAILY = 5  # Daily challenge questions count
+    MINI_GAME_TIME_LIMIT = 60  # Seconds per mini game question
 
 
 class DevelopmentConfig(Config):

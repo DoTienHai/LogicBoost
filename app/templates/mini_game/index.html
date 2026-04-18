@@ -1,35 +1,75 @@
-"""Mini Game - index template."""
 {% extends "base.html" %}
 
-{% block title %}Mini Game - LogicBoost{% endblock %}
+{% block title %}Quick Mini Game - LogicBoost{% endblock %}
 
 {% block content %}
 <div class="mini-game-container">
-    <h1>Quick Mini Games</h1>
-    <p>This is Mini Game Lobby - 30-60 second speed rounds</p>
+    <h1>⚡ Quick Mini Game</h1>
+    <p class="subtitle">Answer questions as fast as you can. One wrong answer = Game Over!</p>
 
-    <div class="game-modes">
-        <div class="mode-card">
-            <h3>Speed Round</h3>
-            <p>This is Speed Round mode</p>
-            <a href="{{ url_for('mini_game.play') }}" class="btn btn-primary">Play Speed Round</a>
+    <div class="game-info">
+        <div class="info-box">
+            <h3>How to Play</h3>
+            <ul>
+                <li>⏱️ Each question has 30-60 seconds</li>
+                <li>✅ Answer correctly to keep playing</li>
+                <li>❌ One wrong answer = Game Over</li>
+                <li>🎯 Your score = Number of correct answers in a row</li>
+            </ul>
         </div>
+    </div>
 
-        <div class="mode-card">
-            <h3>Sudden Death</h3>
-            <p>This is Sudden Death mode</p>
-            <a href="{{ url_for('mini_game.play') }}" class="btn btn-primary">Play Sudden Death</a>
-        </div>
-
-        <div class="mode-card">
-            <h3>Beat Your Best</h3>
-            <p>This is Beat Your Best mode</p>
-            <a href="{{ url_for('mini_game.play') }}" class="btn btn-primary">Play Challenge</a>
-        </div>
+    <div class="start-game">
+        <button class="btn btn-primary btn-large" onclick="startGame()">
+            Start Game Now
+        </button>
     </div>
 
     <div class="navigation">
         <a href="{{ url_for('main.index') }}" class="btn btn-secondary">Back to Home</a>
     </div>
 </div>
+
+<script>
+function startGame() {
+    // Initialize new game session
+    fetch('{{ url_for("mini_game.start") }}', { method: 'POST' })
+        .then(res => res.json())
+        .then(data => {
+            // Redirect to play page
+            window.location.href = '{{ url_for("mini_game.play") }}';
+        })
+        .catch(err => alert('Error starting game: ' + err));
+}
+</script>
+
+<style>
+.game-info {
+    background: #f5f5f5;
+    border-left: 4px solid #007bff;
+    padding: 20px;
+    margin: 20px 0;
+    border-radius: 4px;
+}
+
+.game-info ul {
+    list-style: none;
+    padding: 0;
+}
+
+.game-info li {
+    padding: 8px 0;
+    font-size: 16px;
+}
+
+.start-game {
+    text-align: center;
+    margin: 40px 0;
+}
+
+.btn-large {
+    padding: 15px 40px;
+    font-size: 18px;
+}
+</style>
 {% endblock %}
