@@ -1,6 +1,6 @@
 """Admin routes."""
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash, send_from_directory
-from app.models import Question, SubCategory, db
+from app.models import Question, SubCategory, DifficultyLevel, db
 from app.services.import_service import import_from_excel
 import os
 from werkzeug.utils import secure_filename
@@ -102,8 +102,8 @@ def validate_question_data(data):
     # Validate difficulty
     try:
         difficulty = int(data.get("difficulty", 1))
-        if difficulty not in [1, 2, 3]:
-            errors.append("Difficulty must be 1, 2, or 3")
+        if difficulty not in DifficultyLevel.all_values():
+            errors.append("Difficulty must be 1-5 (Very Easy to Very Hard)")
     except (ValueError, TypeError):
         errors.append("Difficulty must be a number")
     

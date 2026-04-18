@@ -190,13 +190,45 @@ CREATE TABLE questions (
     -- Metadata
     mode                  TEXT NOT NULL,          -- 'daily_challenge', 'mini_game', 'real_world'
     sub_category_id       INTEGER,                -- FK → sub_categories.id (only for real_world mode)
-    difficulty            INTEGER DEFAULT 1,      -- 1 (easy) → 3 (hard)
+    difficulty            INTEGER DEFAULT 1,      -- 1-5: Very Easy, Easy, Medium, Hard, Very Hard
     time_limit            INTEGER,                -- Seconds (mini_game only, null = no limit)
 
     created_at            DATETIME DEFAULT CURRENT_TIMESTAMP,
     
     FOREIGN KEY (sub_category_id) REFERENCES sub_categories(id) ON DELETE SET NULL
 );
+```
+
+### Difficulty Level Enum
+
+**Location:** `app/models/difficulty.py`
+
+Difficulty levels are defined as an enum with 5 levels (1-5). The `difficulty` column in `questions` table stores integer values 1-5:
+
+| Value | Name | Emoji | Description |
+|-------|------|-------|-------------|
+| 1 | VERY_EASY | 🟢 | Basic concept, obvious solution |
+| 2 | EASY | 🟡 | Straightforward problem, minor calculation |
+| 3 | MEDIUM | 🟠 | Requires some thought, multiple steps |
+| 4 | HARD | 🔴 | Complex logic, advanced concepts |
+| 5 | VERY_HARD | ⚫ | Expert level, tricky edge cases |
+
+**Usage in Code:**
+```python
+from app.models import DifficultyLevel
+
+# Create question with difficulty
+question = Question(
+    title="...",
+    difficulty=DifficultyLevel.MEDIUM.value,  # or just 3
+    ...
+)
+
+# Convert to readable string
+level = DifficultyLevel.from_value(3)
+print(level)           # "Medium"
+print(level.emoji)     # "🟠"
+print(int(level))      # 3
 ```
 
 ### Table: `user_answers`
@@ -528,7 +560,7 @@ Columns in `questions_template.xlsx`:
 | `explanation_vi` | | Vietnamese, Markdown + LaTeX supported |
 | `mode` | ✅ | daily_challenge / mini_game / real_world |
 | `sub_category` | | finance / career / business |
-| `difficulty` | | 1 / 2 / 3 |
+| `difficulty` | | 1 / 2 / 3 / 4 / 5 |
 | `time_limit` | | Seconds; leave blank for no limit |
 
 > **Note:** `question_image` and `explanation_image` are **not included in the Excel file**.

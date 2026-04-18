@@ -1,6 +1,6 @@
 """Excel import service for questions."""
 import openpyxl
-from app.models import Question, SubCategory, db
+from app.models import Question, SubCategory, DifficultyLevel, db
 
 
 def import_from_excel(filepath):
@@ -74,9 +74,9 @@ def import_from_excel(filepath):
                 # Validate difficulty
                 try:
                     difficulty = int(difficulty) if difficulty else 1
-                    if difficulty not in [1, 2, 3]:
+                    if difficulty not in DifficultyLevel.all_values():
                         results['errors'].append(
-                            f"Row {row_idx}: Difficulty {difficulty} invalid. Must be 1, 2, or 3"
+                            f"Row {row_idx}: Difficulty {difficulty} invalid. Must be 1-5 (Very Easy to Very Hard)"
                         )
                         continue
                 except (ValueError, TypeError):

@@ -36,7 +36,7 @@ class Question(db.Model):
     # Metadata
     mode = db.Column(db.String(50), nullable=False)  # daily_challenge, mini_game, real_world
     sub_category_id = db.Column(db.Integer, db.ForeignKey("sub_categories.id"))  # FK to sub_categories
-    difficulty = db.Column(db.Integer, default=1)  # 1-3
+    difficulty = db.Column(db.Integer, default=1)  # 1-5: Very Easy, Easy, Medium, Hard, Very Hard
     time_limit = db.Column(db.Integer)  # seconds for mini_game
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)

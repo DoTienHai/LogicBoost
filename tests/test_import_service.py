@@ -144,7 +144,7 @@ class TestImportService:
             ws = wb.active
             headers = ["title", "title_vi", "question", "question_vi", "option_a", "option_b", "option_c", "option_d", "answer", "explanation", "explanation_vi", "mode", "sub_category", "difficulty", "time_limit"]
             ws.append(headers)
-            ws.append(["T1", None, "Q1", None, "a", "b", "c", "d", "a", "Exp", None, "daily_challenge", None, 5, None])
+            ws.append(["T1", None, "Q1", None, "a", "b", "c", "d", "a", "Exp", None, "daily_challenge", None, 6, None])
             wb.save(filepath)
             wb.close()
             

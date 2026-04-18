@@ -219,14 +219,14 @@ class TestAdminRoutes:
             "explanation": "The answer is 4",
             "answer": "a",
             "mode": "daily_challenge",
-            "difficulty": "5",  # Invalid: must be 1-3
+            "difficulty": "6",  # Invalid: must be 1-5
         }
         
         response = client.post("/admin/question/new", data=form_data)
         
         # Should return 400 with errors
         assert response.status_code == 400
-        assert b"Difficulty" in response.data or b"1, 2, or 3" in response.data
+        assert b"Difficulty" in response.data or b"1-5" in response.data
 
     def test_admin_import_page(self, client):
         """Test import page."""
