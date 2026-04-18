@@ -5,14 +5,20 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Try to create instance directory on local development (for SQLite database file)
+# Build absolute path to instance directory (works on Windows and Linux)
+BASE_DIR = Path(__file__).resolve().parent
+INSTANCE_DIR = BASE_DIR / "instance"
+
+# Try to create instance directory on local development
 try:
-    base_dir = Path(__file__).resolve().parent
-    instance_dir = base_dir / "instance"
-    instance_dir.mkdir(parents=True, exist_ok=True)
+    INSTANCE_DIR.mkdir(parents=True, exist_ok=True)
 except (OSError, PermissionError):
     # Render or read-only filesystem - skip directory creation
     pass
+
+# Build absolute SQLite database URI
+DB_PATH = INSTANCE_DIR / "logicboost.db"
+SQLALCHEMY_DATABASE_URI = f"sqlite:///{DB_PATH.as_posix()}"
 
 
 class Config:
@@ -20,6 +26,7 @@ class Config:
 
     FLASK_APP = os.getenv("FLASK_APP", "run.py")
     SECRET_KEY = os.getenv("SECRET_KEY", "dev-key-change-in-production")
+    SQLALCHEMY_DATABASE_URI = SQLALCHEMY_DATABASE_URI  # Use absolute path built above
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # Feature configuration
@@ -32,9 +39,7 @@ class DevelopmentConfig(Config):
     
     DEBUG = True
     TESTING = False
-    # SQLite database: logicboost.db in instance/ directory
-    # Auto-created: first run of app creates the file + tables
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///./instance/logicboost.db'
+    # Inherit SQLite database from Config (absolute path)
 
 
 class TestingConfig(Config):
@@ -54,9 +59,7 @@ class ProductionConfig(Config):
     
     DEBUG = False
     TESTING = False
-    # SQLite database: same path as development
-    # Works on Render with lazy initialization (@app.before_request)
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///./instance/logicboost.db'
+    # Inherit SQLite database from Config (absolute path)
 
 
 def get_config(env: str = None) -> Config:
