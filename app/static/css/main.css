@@ -245,19 +245,139 @@ main {
 .challenge-container,
 .mini-game-container,
 .real-world-container,
-.admin-container,
 .question-container,
 .summary-container,
 .scenario-container,
 .explanation-container,
-.import-container,
-.admin-form-container,
 .mini-game-play-container,
 .result-container {
+    /* Full-width breakout from .container parent */
+    width: 100vw;
+    margin-left: calc(-50vw + 50%);
+    margin-right: calc(-50vw + 50%);
     background: white;
-    padding: 2rem;
-    border-radius: 8px;
+    padding: 2rem 30px;
+    border-radius: 0;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Container titles and descriptions */
+.challenge-container > h1,
+.challenge-container > p,
+.mini-game-container > h1,
+.mini-game-container > p,
+.real-world-container > h1,
+.real-world-container > p,
+.question-container > h1,
+.summary-container > h1,
+.scenario-container > h1,
+.explanation-container > h1,
+.mini-game-play-container > h1,
+.result-container > h1 {
+    text-align: center;
+    max-width: 1000px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Section layouts */
+.challenge-info,
+.game-info,
+.info-section {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 2rem;
+    margin: 2rem auto;
+    max-width: 1200px;
+    padding: 0 30px;
+}
+
+.challenge-info .info-box,
+.game-info .info-box,
+.info-section .info-box {
+    width: 100%;
+    max-width: 600px;
+}
+
+.category-grid,
+.problems-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin: 2rem auto;
+    max-width: 1200px;
+    padding: 0 30px;
+}
+
+.info-box,
+.category-card,
+.problem-card {
+    padding: 1.5rem;
+    background: #f9f9f9;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    transition: all 0.3s ease;
+    flex: 1 1 300px;
+    min-width: 300px;
+    max-width: 500px;
+}
+
+/* Game info specific styling */
+.game-info .info-box {
+    background: #f5f5f5;
+    border-left: 4px solid #007bff;
+    padding: 20px;
+    max-width: 100%;
+}
+
+.game-info ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.game-info li {
+    padding: 8px 0;
+    font-size: 16px;
+}
+
+.info-box:hover,
+.category-card:hover,
+.problem-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.challenge-actions,
+.start-game,
+.navigation,
+.action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: center;
+    align-items: center;
+    margin: 2rem auto;
+    max-width: 1200px;
+    padding: 0 30px;
+}
+
+@media (max-width: 768px) {
+    .challenge-info,
+    .game-info,
+    .category-grid,
+    .problems-list {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    .challenge-actions,
+    .start-game,
+    .navigation {
+        flex-direction: column;
+        align-items: stretch;
+    }
 }
 
 /* Forms */

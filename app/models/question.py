@@ -24,13 +24,13 @@ class Question(db.Model):
     question_image = db.Column(db.String(255))
     explanation_image = db.Column(db.String(255))
 
-    # Answer options (null if used as free_text)
+    # Answer options (optional - for future use)
     option_a = db.Column(db.String(255))
     option_b = db.Column(db.String(255))
     option_c = db.Column(db.String(255))
     option_d = db.Column(db.String(255))
 
-    # Correct answer
+    # Correct answer (FREE-TEXT: user enters exact text to match)
     answer = db.Column(db.String(255), nullable=False)
 
     # Metadata

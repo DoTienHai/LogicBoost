@@ -156,15 +156,14 @@ CREATE TABLE questions (
     explanation_image     TEXT,                   -- Image shown in the explanation
 
     -- Answer options (shared across languages)
-    -- Leave null if question is used as free_text
+    -- REMOVED: No multiple choice options, free-text answer only
     option_a              TEXT,
     option_b              TEXT,
     option_c              TEXT,
     option_d              TEXT,
 
-    -- Correct answer
-    -- multiple_choice → 'a', 'b', 'c', or 'd'
-    -- free_text       → exact text string to compare against
+    -- Correct answer (FREE-TEXT ONLY)
+    -- User must match this text exactly (case-insensitive)
     answer                TEXT NOT NULL,
 
     -- Metadata

@@ -2,30 +2,275 @@
 
 {% block title %}Import Excel - Admin - LogicBoost{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+{% endblock %}
+
 {% block content %}
-<div class="import-container">
-    <h1>Import Questions from Excel</h1>
-    <p>This is Excel Import Page</p>
-
-    <div class="import-section">
-        <h2>1. Download Template</h2>
-        <p>Download the Excel template, fill in your questions, then upload</p>
-        <a href="{{ url_for('admin.download_template') }}" class="btn btn-secondary">Download Template</a>
+<div class="import-wrapper">
+    <!-- Header -->
+    <div class="import-header">
+        <h1>📊 Import Questions from Excel</h1>
+        <p class="import-subtitle">Quick bulk upload with automatic validation</p>
     </div>
 
-    <div class="import-section">
-        <h2>2. Upload File</h2>
-        <form method="POST" enctype="multipart/form-data">
-            <div class="form-group">
-                <label>Choose Excel File</label>
-                <input type="file" name="file" accept=".xlsx" required>
+    <!-- Timeline Progress -->
+    <div class="timeline">
+        <div class="timeline-step active">
+            <div class="timeline-dot">1</div>
+            <div class="timeline-label">Download</div>
+        </div>
+        <div class="timeline-line"></div>
+        <div class="timeline-step">
+            <div class="timeline-dot">2</div>
+            <div class="timeline-label">Fill & Upload</div>
+        </div>
+        <div class="timeline-line"></div>
+        <div class="timeline-step">
+            <div class="timeline-dot">✓</div>
+            <div class="timeline-label">Complete</div>
+        </div>
+    </div>
+
+    <!-- Main Content Container -->
+    <div class="import-container">
+
+        <!-- ============ STEP 1: DOWNLOAD ============ -->
+        <div class="step-card step-1-active">
+            <div class="card-header">
+                <h2><span class="card-step">Step 1</span> Download Template</h2>
+                <p class="card-description">Get the Excel template with all required columns</p>
             </div>
-            <button type="submit" class="btn btn-primary">Import</button>
-        </form>
+            
+            <div class="card-body">
+                <div class="info-box">
+                    <div class="info-icon">📋</div>
+                    <div class="info-text">
+                        <strong>What you'll get:</strong>
+                        <ul>
+                            <li>Pre-formatted spreadsheet with all columns</li>
+                            <li>Example rows to guide you</li>
+                            <li>Data validation rules</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <a href="{{ url_for('admin.download_template') }}" class="btn btn-download btn-large">
+                    📥 Download Excel Template
+                </a>
+            </div>
+        </div>
+
+        <!-- ============ STEP 2: FILL & UPLOAD ============ -->
+        <div class="step-card">
+            <div class="card-header">
+                <h2><span class="card-step">Step 2</span> Fill in Questions & Upload</h2>
+                <p class="card-description">Complete the template and upload for import</p>
+            </div>
+            
+            <div class="card-body">
+                <!-- Requirements Info -->
+                <div class="requirements-box">
+                    <h3>📝 Required Information per Question</h3>
+                    <div class="requirements-grid">
+                        <div class="req-item">
+                            <span class="req-icon">📌</span>
+                            <span class="req-text">
+                                <strong>Basic Info</strong>
+                                <small>Title, Question, Answer, Mode</small>
+                            </span>
+                        </div>
+                        <div class="req-item">
+                            <span class="req-icon">📚</span>
+                            <span class="req-text">
+                                <strong>Details</strong>
+                                <small>Explanation, Options, Difficulty</small>
+                            </span>
+                        </div>
+                        <div class="req-item">
+                            <span class="req-icon">🌐</span>
+                            <span class="req-text">
+                                <strong>Optional</strong>
+                                <small>Vietnamese translation, Images</small>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Upload Form -->
+                <form method="POST" enctype="multipart/form-data" id="uploadForm">
+                    <div class="file-upload-section">
+                        <!-- Custom File Input with Drag & Drop -->
+                        <div class="file-upload-zone" id="fileZone">
+                            <div class="file-upload-icon">📁</div>
+                            <h3>Choose Excel File or Drag & Drop Here</h3>
+                            <p class="file-hint">Supported format: <code>.xlsx</code> or <code>.xls</code></p>
+                            <p class="file-hint-size">Max file size: 10MB</p>
+                            
+                            <input type="file" name="file" id="fileInput" accept=".xlsx,.xls" required hidden>
+                            <button type="button" class="btn btn-file-select" onclick="document.getElementById('fileInput').click()">
+                                📂 Browse Files
+                            </button>
+                        </div>
+
+                        <!-- File Info Display -->
+                        <div id="fileInfo" class="file-info hidden">
+                            <div class="file-info-content">
+                                <div class="file-icon">✓</div>
+                                <div class="file-details">
+                                    <p class="file-label">Selected File:</p>
+                                    <p class="file-name" id="fileName"></p>
+                                </div>
+                            </div>
+                            <button type="button" class="btn-clear-file" onclick="clearFile()" title="Clear selection">
+                                ✕
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="btn btn-primary btn-import btn-large" id="submitBtn" disabled>
+                        ⬆️ Start Import
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ============ STEP 3: RESULTS ============ -->
+        {% if success is defined or errors is defined %}
+        <div class="step-card result-card">
+            <div class="card-header">
+                <h2><span class="card-step">Step 3</span> Import Results</h2>
+            </div>
+            
+            <div class="card-body">
+                {% if success > 0 %}
+                <div class="import-result success">
+                    <div class="result-icon">✅</div>
+                    <div class="result-content">
+                        <h3>Import Successful!</h3>
+                        <p><strong>{{ success }}</strong> question(s) have been imported successfully</p>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if errors %}
+                <div class="import-result errors">
+                    <div class="result-icon">⚠️</div>
+                    <div class="result-content">
+                        <h3>Validation Errors Found</h3>
+                        <p>{{ errors|length }} row(s) had issues. Please review:</p>
+                        <ul class="error-list">
+                            {% for error in errors %}
+                            <li><code>{{ error }}</code></li>
+                            {% endfor %}
+                        </ul>
+                        <p class="error-note">💡 Tip: Fix the errors in your Excel file and upload again</p>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="result-actions">
+                    <a href="{{ url_for('admin.import_excel') }}" class="btn btn-primary">⬆️ Upload Another File</a>
+                    <a href="{{ url_for('admin.index') }}" class="btn btn-secondary">➔ Go to Questions</a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
     </div>
 
-    <div class="navigation">
-        <a href="{{ url_for('admin.index') }}" class="btn btn-secondary">Back to Admin</a>
+    <!-- Footer Navigation -->
+    <div class="import-footer">
+        <a href="{{ url_for('admin.index') }}" class="btn btn-link">← Back to Admin Dashboard</a>
     </div>
 </div>
+
+<script>
+    const fileZone = document.getElementById('fileZone');
+    const fileInput = document.getElementById('fileInput');
+    const fileInfo = document.getElementById('fileInfo');
+    const submitBtn = document.getElementById('submitBtn');
+    const fileName = document.getElementById('fileName');
+
+    // File selection
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            fileName.textContent = e.target.files[0].name;
+            fileZone.classList.add('hidden');
+            fileInfo.classList.remove('hidden');
+            submitBtn.disabled = false;
+            updateTimeline();
+        }
+    });
+
+    // Drag & Drop
+    fileZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        fileZone.classList.add('dragover');
+    });
+
+    fileZone.addEventListener('dragleave', () => {
+        fileZone.classList.remove('dragover');
+    });
+
+    fileZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        fileZone.classList.remove('dragover');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            fileInput.files = files;
+            fileName.textContent = files[0].name;
+            fileZone.classList.add('hidden');
+            fileInfo.classList.remove('hidden');
+            submitBtn.disabled = false;
+            updateTimeline();
+        }
+    });
+
+    function clearFile() {
+        fileInput.value = '';
+        fileName.textContent = '';
+        fileZone.classList.remove('hidden');
+        fileInfo.classList.add('hidden');
+        submitBtn.disabled = true;
+        resetTimeline();
+    }
+
+    // Timeline management
+    function updateTimeline() {
+        const steps = document.querySelectorAll('.timeline-step');
+        if (steps.length >= 2) {
+            steps[0].classList.remove('active');
+            steps[1].classList.add('active');
+        }
+
+        const stepCard = document.querySelector('.step-1-active');
+        if (stepCard) {
+            stepCard.classList.remove('step-1-active');
+        }
+    }
+
+    function resetTimeline() {
+        const steps = document.querySelectorAll('.timeline-step');
+        if (steps.length >= 1) {
+            steps[0].classList.add('active');
+        }
+        if (steps.length >= 2) {
+            steps[1].classList.remove('active');
+        }
+    }
+
+    // Form submit validation
+    document.getElementById('uploadForm').addEventListener('submit', (e) => {
+        if (!fileInput.files.length) {
+            e.preventDefault();
+            alert('Please select a file');
+        }
+    });
+
+    // Initialize timeline
+    resetTimeline();
+</script>
 {% endblock %}
