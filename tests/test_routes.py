@@ -1,5 +1,6 @@
 """Integration tests for all routes."""
 import pytest
+from app.models import Question, db
 
 
 class TestMainRoutes:
@@ -24,15 +25,53 @@ class TestDailyChallengeRoutes:
 
     def test_daily_challenge_start(self, client):
         """Test starting daily challenge."""
-        response = client.get("/daily-challenge/start")
-        assert response.status_code == 200
+        # Mock questions in the database
+        from app.models import Question
+        q = Question(
+            title="Test Q",
+            question="What is 1+1?",
+            explanation="2",
+            answer="2",
+            mode="daily_challenge",
+            difficulty=1,
+        )
+        db.session.add(q)
+        db.session.commit()
+        
+        # Add 5 test questions
+        for i in range(5):
+            q = Question(
+                title=f"Test Q{i}",
+                question=f"Question {i}",
+                explanation=f"Answer {i}",
+                answer=f"{i}",
+                mode="daily_challenge",
+                difficulty=1,
+            )
+            db.session.add(q)
+        db.session.commit()
+        
+        response = client.get("/daily-challenge/start", follow_redirects=False)
+        # Should redirect to first question
+        assert response.status_code == 302
         assert b"question" in response.data.lower()
 
     def test_daily_challenge_summary(self, client):
-        """Test daily challenge summary."""
-        response = client.get("/daily-challenge/summary")
-        assert response.status_code == 200
-        assert b"Summary" in response.data
+        """Test daily challenge summary with session data."""
+        with client:
+            # Simulate a completed daily challenge with 5 answers
+            with client.session_transaction() as sess:
+                sess["daily_challenge_answers"] = [
+                    {"question_id": 1, "answer": "a", "is_correct": True, "correct_answer": "a"},
+                    {"question_id": 2, "answer": "b", "is_correct": True, "correct_answer": "b"},
+                    {"question_id": 3, "answer": "c", "is_correct": False, "correct_answer": "x"},
+                    {"question_id": 4, "answer": "d", "is_correct": True, "correct_answer": "d"},
+                    {"question_id": 5, "answer": "text", "is_correct": False, "correct_answer": "correct"},
+                ]
+            
+            response = client.get("/daily-challenge/summary")
+            assert response.status_code == 200
+            assert b"Complete" in response.data or b"Accuracy" in response.data
 
 
 class TestMiniGameRoutes:
