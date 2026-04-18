@@ -172,11 +172,11 @@ class TestImportRoutes:
         assert response.status_code == 200
     
     def test_import_template(self, client):
-        """Test template endpoint."""
+        """Test template endpoint - should return Excel file."""
         response = client.get("/admin/import/template")
         assert response.status_code == 200
-        data = response.get_json()
-        assert "columns" in data
+        # Check that response is Excel file
+        assert "spreadsheetml" in response.content_type or "octet-stream" in response.content_type
     
     def test_import_no_file(self, client):
         """Test import without file."""
