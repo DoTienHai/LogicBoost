@@ -1,4 +1,5 @@
 """Flask application factory."""
+import os
 from flask import Flask
 from config import get_config
 from app.models import db
@@ -19,6 +20,11 @@ def create_app(config_name: str = None) -> Flask:
     # Load configuration
     config = get_config(config_name)
     app.config.from_object(config)
+    
+    # Create instance directory if it doesn't exist
+    if not config_name or config_name == "development":
+        instance_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "instance")
+        os.makedirs(instance_path, exist_ok=True)
     
     # Initialize database
     db.init_app(app)

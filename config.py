@@ -1,8 +1,22 @@
 """Flask configuration settings."""
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 
 load_dotenv()
+
+
+def _get_database_uri():
+    """Get the database URI with absolute path."""
+    base_dir = Path(__file__).resolve().parent  # config.py is in root, so .parent is root
+    instance_dir = base_dir / "instance"
+    db_path = instance_dir / "logicboost.db"
+    # Create instance directory if needed
+    instance_dir.mkdir(parents=True, exist_ok=True)
+    # Convert file URI to sqlite URI
+    file_uri = db_path.as_uri()
+    sqlite_uri = file_uri.replace("file://", "sqlite://")
+    return sqlite_uri
 
 
 class Config:
@@ -10,7 +24,7 @@ class Config:
 
     FLASK_APP = os.getenv("FLASK_APP", "run.py")
     SECRET_KEY = os.getenv("SECRET_KEY", "dev-key")
-    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", "sqlite:///instance/logicboost.db")
+    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", _get_database_uri())
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 
