@@ -1,0 +1,10 @@
+"""Database models package."""
+from flask_sqlalchemy import SQLAlchemy
+
+db = SQLAlchemy()
+
+from app.models.question import Question
+from app.models.user_answer import UserAnswer
+from app.models.stats import Stats
+
+__all__ = ["db", "Question", "UserAnswer", "Stats"]
