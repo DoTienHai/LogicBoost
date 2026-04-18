@@ -84,7 +84,7 @@ function startTimer() {
 }
 
 function loadQuestion() {
-    // Pause timer while loading
+    // Safety: ensure timer is stopped (already stopped in submitMiniAnswer, but do it here too)
     clearInterval(timerInterval);
     timerInterval = null;
     
@@ -251,8 +251,12 @@ function submitMiniAnswer() {
             // Reset selected answer
             selectedAnswer = null;
 
+            // Stop current timer immediately to prevent overlap when user submits quickly
+            clearInterval(timerInterval);
+            timerInterval = null;
+
             // Load next question after short delay
-            // loadQuestion() will stop old timer, reset timeRemaining, and start new timer
+            // loadQuestion() will reset timeRemaining and start fresh timer
             setTimeout(() => {
                 loadQuestion();
             }, 600);

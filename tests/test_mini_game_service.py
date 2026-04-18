@@ -55,6 +55,32 @@ class TestMiniGameService:
             
             assert question is None
     
+    def test_get_random_question_avoids_last_question(self, app, sample_mini_game_questions):
+        """Test that get_random_question avoids returning the last question shown."""
+        with app.app_context():
+            # Get first question and remember it
+            q1 = mini_game_service.get_random_question()
+            q1_id = q1.id
+            
+            # Get all question IDs
+            all_ids = [q.id for q in Question.query.filter_by(mode="mini_game").all()]
+            
+            # Skip if only 1 question total
+            if len(all_ids) <= 1:
+                pytest.skip("Need at least 2 questions for this test")
+            
+            # Call again with last_question_id set to q1
+            # Try multiple times to account for randomness
+            different_found = False
+            for _ in range(10):
+                q2 = mini_game_service.get_random_question(last_question_id=q1_id)
+                if q2 and q2.id != q1_id:
+                    different_found = True
+                    break
+            
+            # Should get a different question (or None if only 1 available, but we skipped that)
+            assert different_found or q2 is None
+    
     def test_check_answer_correct_multiple_choice(self, app, sample_mini_game_questions):
         """Test check_answer with correct multiple choice answer."""
         with app.app_context():

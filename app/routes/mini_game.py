@@ -37,15 +37,20 @@ def question():
     """Get next question for mini game."""
     # Get questions already answered in this session
     answered_ids = session.get("mini_game_answered", [])
+    last_question_id = session.get("mini_game_last_question_id")
     
     # Get language preference (default English)
     lang = request.args.get("lang", "en")
     
-    # Get random question
-    question_obj = mini_game_service.get_random_question(answered_ids)
+    # Get random question (avoid repeating the last one)
+    question_obj = mini_game_service.get_random_question(answered_ids, last_question_id)
     
     if not question_obj:
         return jsonify({"error": "No questions available"}), 404
+    
+    # Store current question ID for next call to avoid immediate repeat
+    session["mini_game_last_question_id"] = question_obj.id
+    session.modified = True
     
     # Format question data
     question_data = mini_game_service.format_question_data(question_obj, lang)

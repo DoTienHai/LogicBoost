@@ -3,17 +3,23 @@ from app.models import Question, UserAnswer, db
 import random
 
 
-def get_random_question(answered_ids=None):
+def get_random_question(answered_ids=None, last_question_id=None):
     """
     Get a random mini_game question that hasn't been answered yet.
     
     Args:
         answered_ids: List of question IDs already answered in this session
+        last_question_id: ID of the last question shown (to avoid immediate repeat)
         
     Returns:
         Question object or None if no questions available
     """
     answered_ids = answered_ids or []
+    exclude_ids = set(answered_ids)
+    
+    # Also exclude the last question to avoid immediate repeats
+    if last_question_id:
+        exclude_ids.add(last_question_id)
     
     # Get all mini_game questions
     all_questions = Question.query.filter_by(mode="mini_game").all()
@@ -21,15 +27,19 @@ def get_random_question(answered_ids=None):
     if not all_questions:
         return None
     
-    # Filter out answered questions
-    available = [q for q in all_questions if q.id not in answered_ids]
+    # Filter out answered questions and last shown question
+    available = [q for q in all_questions if q.id not in exclude_ids]
     
-    # If all questions answered, reset and start over
+    # If all questions answered or only last_question remains, use all except answered
+    if not available:
+        available = [q for q in all_questions if q.id not in answered_ids]
+    
+    # If still empty (only 1 question total), reset to all
     if not available:
         available = all_questions
     
-    # Return random question
-    return random.choice(available)
+    # Return random question from available pool
+    return random.choice(available) if available else None
 
 
 def check_answer(question_id, user_answer, time_taken=0):
