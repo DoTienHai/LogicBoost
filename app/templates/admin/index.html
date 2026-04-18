@@ -1,0 +1,56 @@
+"""Admin - dashboard template."""
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - LogicBoost{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <h1>Admin Dashboard</h1>
+    <p>This is Admin Panel - Manage all questions</p>
+
+    <div class="admin-actions">
+        <a href="{{ url_for('admin.add_question') }}" class="btn btn-primary">Add New Question</a>
+        <a href="{{ url_for('admin.import_page') }}" class="btn btn-primary">Import Excel</a>
+    </div>
+
+    <div class="questions-table">
+        <h2>All Questions</h2>
+        
+        {% if questions %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Title</th>
+                        <th>Mode</th>
+                        <th>Difficulty</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for q in questions %}
+                        <tr>
+                            <td>{{ q.id }}</td>
+                            <td>{{ q.title }}</td>
+                            <td>{{ q.mode }}</td>
+                            <td>{{ q.difficulty }}</td>
+                            <td>
+                                <a href="{{ url_for('admin.edit_question', question_id=q.id) }}" class="btn btn-sm btn-secondary">Edit</a>
+                                <form method="POST" action="{{ url_for('admin.delete_question', question_id=q.id) }}" style="display:inline;">
+                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete?')">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No questions yet</p>
+        {% endif %}
+    </div>
+
+    <div class="navigation">
+        <a href="{{ url_for('main.index') }}" class="btn btn-secondary">Back to Home</a>
+    </div>
+</div>
+{% endblock %}

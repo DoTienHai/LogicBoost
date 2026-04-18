@@ -1,0 +1,106 @@
+"""Admin - question form template."""
+{% extends "base.html" %}
+
+{% block title %}{% if question %}Edit{% else %}Add{% endif %} Question - Admin{% endblock %}
+
+{% block content %}
+<div class="admin-form-container">
+    <h1>{% if question %}Edit Question{% else %}Add New Question{% endif %}</h1>
+    <p>This is Question Form Page</p>
+
+    <form method="POST" class="question-form">
+        <h2>English Content</h2>
+        <div class="form-group">
+            <label>Title (EN)</label>
+            <input type="text" name="title" value="{{ question.title if question else '' }}" required>
+        </div>
+
+        <div class="form-group">
+            <label>Question (EN)</label>
+            <textarea name="question" required>{{ question.question if question else '' }}</textarea>
+        </div>
+
+        <div class="form-group">
+            <label>Explanation (EN)</label>
+            <textarea name="explanation" required>{{ question.explanation if question else '' }}</textarea>
+        </div>
+
+        <h2>Vietnamese Content (Optional)</h2>
+        <div class="form-group">
+            <label>Title (VI)</label>
+            <input type="text" name="title_vi" value="{{ question.title_vi if question else '' }}">
+        </div>
+
+        <div class="form-group">
+            <label>Question (VI)</label>
+            <textarea name="question_vi">{{ question.question_vi if question else '' }}</textarea>
+        </div>
+
+        <div class="form-group">
+            <label>Explanation (VI)</label>
+            <textarea name="explanation_vi">{{ question.explanation_vi if question else '' }}</textarea>
+        </div>
+
+        <h2>Answer Options</h2>
+        <div class="form-group">
+            <label>Option A</label>
+            <input type="text" name="option_a" value="{{ question.option_a if question else '' }}">
+        </div>
+
+        <div class="form-group">
+            <label>Option B</label>
+            <input type="text" name="option_b" value="{{ question.option_b if question else '' }}">
+        </div>
+
+        <div class="form-group">
+            <label>Option C</label>
+            <input type="text" name="option_c" value="{{ question.option_c if question else '' }}">
+        </div>
+
+        <div class="form-group">
+            <label>Option D</label>
+            <input type="text" name="option_d" value="{{ question.option_d if question else '' }}">
+        </div>
+
+        <div class="form-group">
+            <label>Correct Answer (a/b/c/d or text)</label>
+            <input type="text" name="answer" value="{{ question.answer if question else '' }}" required>
+        </div>
+
+        <h2>Metadata</h2>
+        <div class="form-group">
+            <label>Mode</label>
+            <select name="mode" required>
+                <option value="daily_challenge" {% if question and question.mode == 'daily_challenge' %}selected{% endif %}>Daily Challenge</option>
+                <option value="mini_game" {% if question and question.mode == 'mini_game' %}selected{% endif %}>Mini Game</option>
+                <option value="real_world" {% if question and question.mode == 'real_world' %}selected{% endif %}>Real-world</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Sub-category</label>
+            <select name="sub_category">
+                <option value="">None</option>
+                <option value="finance" {% if question and question.sub_category == 'finance' %}selected{% endif %}>Finance</option>
+                <option value="career" {% if question and question.sub_category == 'career' %}selected{% endif %}>Career</option>
+                <option value="business" {% if question and question.sub_category == 'business' %}selected{% endif %}>Business</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Difficulty (1-3)</label>
+            <input type="number" name="difficulty" min="1" max="3" value="{{ question.difficulty if question else 1 }}">
+        </div>
+
+        <div class="form-group">
+            <label>Time Limit (seconds)</label>
+            <input type="number" name="time_limit" value="{{ question.time_limit if question else '' }}">
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">{% if question %}Update{% else %}Create{% endif %} Question</button>
+            <a href="{{ url_for('admin.index') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

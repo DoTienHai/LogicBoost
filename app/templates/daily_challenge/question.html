@@ -1,0 +1,39 @@
+"""Daily Challenge - question template."""
+{% extends "base.html" %}
+
+{% block title %}Question - Daily Challenge - LogicBoost{% endblock %}
+
+{% block content %}
+<div class="question-container">
+    <div class="question-header">
+        <h2>Daily Challenge</h2>
+        <p>Question {{ question_number }} of {{ total_questions }}</p>
+    </div>
+
+    {% if question %}
+        <div class="question-content">
+            <p>This is a question page - Question ID: {{ question.id }}</p>
+            <p>{{ question.title }}</p>
+            <p>{{ question.question }}</p>
+
+            <div class="question-options">
+                {% if question.option_a %}
+                    <button onclick="selectAnswer('a')" class="btn btn-option">A. {{ question.option_a }}</button>
+                    <button onclick="selectAnswer('b')" class="btn btn-option">B. {{ question.option_b }}</button>
+                    <button onclick="selectAnswer('c')" class="btn btn-option">C. {{ question.option_c }}</button>
+                    <button onclick="selectAnswer('d')" class="btn btn-option">D. {{ question.option_d }}</button>
+                {% else %}
+                    <input type="text" id="user-answer" placeholder="Type your answer...">
+                    <button onclick="submitAnswer()" class="btn btn-primary">Submit</button>
+                {% endif %}
+            </div>
+        </div>
+    {% else %}
+        <p>No questions available</p>
+    {% endif %}
+
+    <div class="navigation">
+        <a href="{{ url_for('daily_challenge.index') }}" class="btn btn-secondary">Back to Lobby</a>
+    </div>
+</div>
+{% endblock %}

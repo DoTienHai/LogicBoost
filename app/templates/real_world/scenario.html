@@ -1,0 +1,36 @@
+"""Real-world - scenario template."""
+{% extends "base.html" %}
+
+{% block title %}Scenario - Real-world - LogicBoost{% endblock %}
+
+{% block content %}
+<div class="scenario-container">
+    <h1>Real-world Scenario</h1>
+    
+    {% if question %}
+        <div class="scenario-content">
+            <h2>{{ question.title }}</h2>
+            <p>This is a real-world scenario question</p>
+            <p>{{ question.question }}</p>
+
+            <div class="scenario-options">
+                {% if question.option_a %}
+                    <button onclick="selectAnswer('a')" class="btn btn-option">A. {{ question.option_a }}</button>
+                    <button onclick="selectAnswer('b')" class="btn btn-option">B. {{ question.option_b }}</button>
+                    <button onclick="selectAnswer('c')" class="btn btn-option">C. {{ question.option_c }}</button>
+                    <button onclick="selectAnswer('d')" class="btn btn-option">D. {{ question.option_d }}</button>
+                {% else %}
+                    <input type="text" id="user-answer" placeholder="Type your answer...">
+                    <button onclick="submitAnswer()" class="btn btn-primary">Submit Answer</button>
+                {% endif %}
+            </div>
+        </div>
+    {% else %}
+        <p>Scenario not found</p>
+    {% endif %}
+
+    <div class="navigation">
+        <a href="{{ url_for('real_world.index') }}" class="btn btn-secondary">Back to Categories</a>
+    </div>
+</div>
+{% endblock %}

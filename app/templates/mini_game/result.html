@@ -1,0 +1,27 @@
+"""Mini Game - result template."""
+{% extends "base.html" %}
+
+{% block title %}Result - Mini Game - LogicBoost{% endblock %}
+
+{% block content %}
+<div class="result-container">
+    <h1>Game Result</h1>
+    <p>This is Mini Game Result Page</p>
+
+    <div class="result-info">
+        <div class="result-box">
+            <h3>Score</h3>
+            <p class="result-value">0 points</p>
+        </div>
+        <div class="result-box">
+            <h3>Time</h3>
+            <p class="result-value">0 seconds</p>
+        </div>
+    </div>
+
+    <div class="result-actions">
+        <a href="{{ url_for('mini_game.play') }}" class="btn btn-primary">Play Again</a>
+        <a href="{{ url_for('main.index') }}" class="btn btn-secondary">Back to Home</a>
+    </div>
+</div>
+{% endblock %}

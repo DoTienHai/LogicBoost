@@ -1,0 +1,31 @@
+"""Daily Challenge - summary template."""
+{% extends "base.html" %}
+
+{% block title %}Summary - Daily Challenge - LogicBoost{% endblock %}
+
+{% block content %}
+<div class="summary-container">
+    <h1>Challenge Summary</h1>
+    <p>This is Daily Challenge Summary Page</p>
+
+    <div class="summary-stats">
+        <div class="stat-box">
+            <h3>Correct Answers</h3>
+            <p class="stat-value">0</p>
+        </div>
+        <div class="stat-box">
+            <h3>Time Taken</h3>
+            <p class="stat-value">0 seconds</p>
+        </div>
+        <div class="stat-box">
+            <h3>Accuracy</h3>
+            <p class="stat-value">0%</p>
+        </div>
+    </div>
+
+    <div class="summary-actions">
+        <a href="{{ url_for('main.index') }}" class="btn btn-primary">Back to Home</a>
+        <a href="{{ url_for('daily_challenge.index') }}" class="btn btn-secondary">New Challenge</a>
+    </div>
+</div>
+{% endblock %}

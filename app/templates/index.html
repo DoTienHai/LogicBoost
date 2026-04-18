@@ -1,0 +1,31 @@
+"""Home page template."""
+{% extends "base.html" %}
+
+{% block title %}LogicBoost - Keep Your Mind Sharp{% endblock %}
+
+{% block content %}
+<div class="hero">
+    <h1>LogicBoost</h1>
+    <p>Stay mentally sharp with daily math and strategy challenges</p>
+</div>
+
+<div class="features-grid">
+    <div class="feature-card">
+        <h2>📅 Daily Challenge</h2>
+        <p>This is Daily Challenge - 3-5 questions per day</p>
+        <a href="{{ url_for('daily_challenge.index') }}" class="btn btn-primary">Start Challenge</a>
+    </div>
+
+    <div class="feature-card">
+        <h2>⚡ Quick Mini Game</h2>
+        <p>This is Mini Game - 30-60 second speed rounds</p>
+        <a href="{{ url_for('mini_game.index') }}" class="btn btn-primary">Play Game</a>
+    </div>
+
+    <div class="feature-card">
+        <h2>🌍 Real-world Problems</h2>
+        <p>This is Real-world Problems - Finance, Career, Business scenarios</p>
+        <a href="{{ url_for('real_world.index') }}" class="btn btn-primary">Solve Problems</a>
+    </div>
+</div>
+{% endblock %}

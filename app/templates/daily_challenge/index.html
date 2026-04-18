@@ -1,0 +1,24 @@
+"""Daily Challenge - lobby template."""
+{% extends "base.html" %}
+
+{% block title %}Daily Challenge - LogicBoost{% endblock %}
+
+{% block content %}
+<div class="challenge-container">
+    <h1>Daily Challenge</h1>
+    <p>This is Daily Challenge Lobby - Complete 3-5 questions per day</p>
+
+    <div class="challenge-info">
+        <div class="info-box">
+            <h3>Today's Challenge</h3>
+            <p>Difficulty: Easy → Medium → Hard</p>
+            <p>Estimated Time: 5-7 minutes</p>
+        </div>
+    </div>
+
+    <div class="challenge-actions">
+        <a href="{{ url_for('daily_challenge.start') }}" class="btn btn-large btn-primary">Start Daily Challenge</a>
+        <a href="{{ url_for('main.index') }}" class="btn btn-secondary">Back to Home</a>
+    </div>
+</div>
+{% endblock %}

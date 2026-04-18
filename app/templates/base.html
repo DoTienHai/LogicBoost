@@ -1,0 +1,36 @@
+"""Base template with navigation."""
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}LogicBoost{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-brand">
+                <a href="{{ url_for('main.index') }}">LogicBoost</a>
+            </div>
+            <ul class="navbar-menu">
+                <li><a href="{{ url_for('daily_challenge.index') }}">Daily Challenge</a></li>
+                <li><a href="{{ url_for('mini_game.index') }}">Mini Game</a></li>
+                <li><a href="{{ url_for('real_world.index') }}">Real-world</a></li>
+                <li><a href="{{ url_for('admin.index') }}">Admin</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

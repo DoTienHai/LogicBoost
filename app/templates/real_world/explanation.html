@@ -1,0 +1,30 @@
+"""Real-world - explanation template."""
+{% extends "base.html" %}
+
+{% block title %}Explanation - Real-world - LogicBoost{% endblock %}
+
+{% block content %}
+<div class="explanation-container">
+    <h1>Step-by-step Explanation</h1>
+    
+    {% if question %}
+        <div class="explanation-content">
+            <h2>{{ question.title }}</h2>
+            <p><strong>Question:</strong> {{ question.question }}</p>
+            <p><strong>Correct Answer:</strong> {{ question.answer }}</p>
+            
+            <div class="explanation-body">
+                <h3>Explanation:</h3>
+                <p>{{ question.explanation }}</p>
+            </div>
+        </div>
+    {% else %}
+        <p>Explanation not found</p>
+    {% endif %}
+
+    <div class="navigation">
+        <a href="{{ url_for('real_world.index') }}" class="btn btn-secondary">Back to Problems</a>
+        <a href="{{ url_for('main.index') }}" class="btn btn-secondary">Back to Home</a>
+    </div>
+</div>
+{% endblock %}

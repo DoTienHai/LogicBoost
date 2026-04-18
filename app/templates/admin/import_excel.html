@@ -1,0 +1,32 @@
+"""Admin - import excel template."""
+{% extends "base.html" %}
+
+{% block title %}Import Excel - Admin - LogicBoost{% endblock %}
+
+{% block content %}
+<div class="import-container">
+    <h1>Import Questions from Excel</h1>
+    <p>This is Excel Import Page</p>
+
+    <div class="import-section">
+        <h2>1. Download Template</h2>
+        <p>Download the Excel template, fill in your questions, then upload</p>
+        <a href="{{ url_for('admin.download_template') }}" class="btn btn-secondary">Download Template</a>
+    </div>
+
+    <div class="import-section">
+        <h2>2. Upload File</h2>
+        <form method="POST" enctype="multipart/form-data">
+            <div class="form-group">
+                <label>Choose Excel File</label>
+                <input type="file" name="file" accept=".xlsx" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Import</button>
+        </form>
+    </div>
+
+    <div class="navigation">
+        <a href="{{ url_for('admin.index') }}" class="btn btn-secondary">Back to Admin</a>
+    </div>
+</div>
+{% endblock %}

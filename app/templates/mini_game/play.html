@@ -1,0 +1,26 @@
+"""Mini Game - play template."""
+{% extends "base.html" %}
+
+{% block title %}Playing - Mini Game - LogicBoost{% endblock %}
+
+{% block content %}
+<div class="mini-game-play-container">
+    <div class="game-timer">
+        <h2>Time: <span id="timer">60</span>s</h2>
+    </div>
+
+    <p>This is Mini Game Play Page - Question ID: {{ question_id }}</p>
+
+    <div class="game-question">
+        <h3>Sample Question</h3>
+        <p>Solve this quickly!</p>
+        
+        <input type="text" id="answer" placeholder="Type your answer..." autofocus>
+        <button onclick="submitAnswer()" class="btn btn-primary">Submit</button>
+    </div>
+
+    <div class="navigation">
+        <a href="{{ url_for('mini_game.index') }}" class="btn btn-secondary">Back to Lobby</a>
+    </div>
+</div>
+{% endblock %}
