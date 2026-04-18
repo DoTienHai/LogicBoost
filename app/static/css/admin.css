@@ -1198,6 +1198,103 @@
     flex: 1;
 }
 
+/* ========================================
+   DIFFICULTY OPTIONS (Radio Buttons)
+   ======================================== */
+
+.difficulty-options {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.difficulty-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: #fff;
+}
+
+.difficulty-option input[type="radio"] {
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+}
+
+.difficulty-option span {
+    font-weight: 500;
+    color: #333;
+}
+
+.difficulty-option:hover {
+    border-color: #007bff;
+    background: #f8fbff;
+}
+
+.difficulty-option input[type="radio"]:checked + span {
+    color: #007bff;
+    font-weight: 600;
+}
+
+/* ========================================
+   FILE INPUTS (Images)
+   ======================================== */
+
+.form-group input[type="file"] {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid #e0e0e0;
+    border-radius: 6px;
+    background: #fff;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+}
+
+.form-group input[type="file"]:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.form-group input[type="file"]::file-selector-button {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: white;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+    margin-right: 10px;
+    transition: all 0.2s;
+}
+
+.form-group input[type="file"]::file-selector-button:hover {
+    background: linear-gradient(135deg, #0056b3, #003d82);
+    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+}
+
+/* Image preview container */
+#question-image-preview,
+#explanation-image-preview {
+    text-align: center;
+    padding: 10px;
+    border-radius: 6px;
+    background: #f9f9f9;
+}
+
+#question-image-preview img,
+#explanation-image-preview img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+}
+
 .alert h4 {
     margin: 0 0 10px 0;
     font-size: 1.1em;

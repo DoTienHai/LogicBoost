@@ -5,8 +5,75 @@ from app.services.import_service import import_from_excel
 import os
 from werkzeug.utils import secure_filename
 import tempfile
+from PIL import Image
+import io
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
+
+# Image upload configuration
+UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), '../static/images/questions')
+ALLOWED_EXTENSIONS = {'png', 'webp', 'jpg', 'jpeg'}
+MAX_IMAGE_SIZE = 200 * 1024  # 200 KB
+
+
+def allowed_file(filename):
+    """Check if file extension is allowed."""
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+def validate_image_file(file):
+    """Validate image file. Returns (is_valid, error_message)."""
+    if not file or file.filename == '':
+        return True, None
+    
+    if not allowed_file(file.filename):
+        return False, "Image must be PNG, WebP, JPG, or JPEG"
+    
+    if len(file.read()) > MAX_IMAGE_SIZE:
+        file.seek(0)
+        return False, "Image must be smaller than 200 KB"
+    
+    file.seek(0)
+    return True, None
+
+
+def save_image(file, question_id, image_type):
+    """
+    Save uploaded image with naming convention {question_id}_{image_type}.ext
+    image_type: 'q' (question) or 'e' (explanation)
+    Returns: (filename, error_message) or (None, error_message)
+    """
+    if not file or file.filename == '':
+        return None, None
+    
+    # Validate
+    is_valid, error = validate_image_file(file)
+    if not is_valid:
+        return None, error
+    
+    # Create upload folder if doesn't exist
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+    
+    try:
+        # Convert to PNG for consistency (even if uploaded as WebP/JPG)
+        img = Image.open(file)
+        
+        # Convert RGBA to RGB if needed
+        if img.mode in ('RGBA', 'LA', 'P'):
+            rgb_img = Image.new('RGB', img.size, (255, 255, 255))
+            rgb_img.paste(img, mask=img.split()[-1] if img.mode == 'RGBA' else None)
+            img = rgb_img
+        
+        # Generate filename
+        filename = f"{question_id}_{image_type}.png"
+        filepath = os.path.join(UPLOAD_FOLDER, filename)
+        
+        # Save as PNG
+        img.save(filepath, 'PNG', optimize=True)
+        
+        return filename, None
+    except Exception as e:
+        return None, f"Error processing image: {str(e)}"
 
 
 def validate_question_data(data):
@@ -24,6 +91,8 @@ def validate_question_data(data):
         errors.append("Answer is required")
     if not data.get("mode"):
         errors.append("Mode is required")
+    if not data.get("difficulty"):
+        errors.append("Difficulty is required")
     
     # Validate mode
     valid_modes = ["daily_challenge", "mini_game", "real_world"]
@@ -44,6 +113,10 @@ def validate_question_data(data):
             int(data.get("time_limit"))
         except (ValueError, TypeError):
             errors.append("Time limit must be a number (seconds)")
+    
+    # Validate sub_category for real_world mode
+    if data.get("mode") == "real_world" and not data.get("sub_category"):
+        errors.append("Sub-category is required for Real-world mode")
     
     return len(errors) == 0, errors
 
@@ -69,7 +142,7 @@ def add_question():
             ), 400
         
         try:
-            # Create and save question
+            # Create question object (without ID yet)
             question = Question(
                 title=request.form.get("title"),
                 title_vi=request.form.get("title_vi"),
@@ -77,19 +150,45 @@ def add_question():
                 question_vi=request.form.get("question_vi"),
                 explanation=request.form.get("explanation"),
                 explanation_vi=request.form.get("explanation_vi"),
-                option_a=request.form.get("option_a"),
-                option_b=request.form.get("option_b"),
-                option_c=request.form.get("option_c"),
-                option_d=request.form.get("option_d"),
+                option_a=request.form.get("option_a") or None,
+                option_b=request.form.get("option_b") or None,
+                option_c=request.form.get("option_c") or None,
+                option_d=request.form.get("option_d") or None,
                 answer=request.form.get("answer"),
                 mode=request.form.get("mode"),
-                sub_category=request.form.get("sub_category"),
+                sub_category=request.form.get("sub_category") or None,
                 difficulty=int(request.form.get("difficulty", 1)),
                 time_limit=request.form.get("time_limit") or None,
             )
             db.session.add(question)
-            db.session.commit()
+            db.session.flush()  # Get the ID without committing
             
+            # Handle image uploads
+            if 'question_image' in request.files:
+                filename, error = save_image(request.files['question_image'], question.id, 'q')
+                if error:
+                    db.session.rollback()
+                    return render_template(
+                        "admin/question_form.html",
+                        errors=[error],
+                        form_data=request.form.to_dict()
+                    ), 400
+                if filename:
+                    question.question_image = filename
+            
+            if 'explanation_image' in request.files:
+                filename, error = save_image(request.files['explanation_image'], question.id, 'e')
+                if error:
+                    db.session.rollback()
+                    return render_template(
+                        "admin/question_form.html",
+                        errors=[error],
+                        form_data=request.form.to_dict()
+                    ), 400
+                if filename:
+                    question.explanation_image = filename
+            
+            db.session.commit()
             return redirect(url_for("admin.index"))
         except Exception as e:
             db.session.rollback()
@@ -125,15 +224,42 @@ def edit_question(question_id):
             question.question_vi = request.form.get("question_vi")
             question.explanation = request.form.get("explanation")
             question.explanation_vi = request.form.get("explanation_vi")
-            question.option_a = request.form.get("option_a")
-            question.option_b = request.form.get("option_b")
-            question.option_c = request.form.get("option_c")
-            question.option_d = request.form.get("option_d")
+            question.option_a = request.form.get("option_a") or None
+            question.option_b = request.form.get("option_b") or None
+            question.option_c = request.form.get("option_c") or None
+            question.option_d = request.form.get("option_d") or None
             question.answer = request.form.get("answer")
             question.mode = request.form.get("mode")
-            question.sub_category = request.form.get("sub_category")
+            question.sub_category = request.form.get("sub_category") or None
             question.difficulty = int(request.form.get("difficulty", 1))
             question.time_limit = request.form.get("time_limit") or None
+            
+            # Handle image uploads (optional, can update without changing images)
+            if 'question_image' in request.files and request.files['question_image'].filename:
+                filename, error = save_image(request.files['question_image'], question.id, 'q')
+                if error:
+                    db.session.rollback()
+                    return render_template(
+                        "admin/question_form.html",
+                        question=question,
+                        errors=[error],
+                        form_data=request.form.to_dict()
+                    ), 400
+                if filename:
+                    question.question_image = filename
+            
+            if 'explanation_image' in request.files and request.files['explanation_image'].filename:
+                filename, error = save_image(request.files['explanation_image'], question.id, 'e')
+                if error:
+                    db.session.rollback()
+                    return render_template(
+                        "admin/question_form.html",
+                        question=question,
+                        errors=[error],
+                        form_data=request.form.to_dict()
+                    ), 400
+                if filename:
+                    question.explanation_image = filename
 
             db.session.commit()
             return redirect(url_for("admin.index"))

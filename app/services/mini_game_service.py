@@ -61,15 +61,20 @@ def check_answer(question_id, user_answer, time_taken=0):
     if not question:
         return {"error": "Question not found"}
     
-    # Normalize answers for comparison
-    correct_answer = question.answer.lower().strip()
-    user_ans = user_answer.lower().strip()
-    
-    # Check if correct
-    is_correct = (correct_answer == user_ans)
-    
     # Determine question type
     question_type = "multiple_choice" if question.option_a else "free_text"
+    
+    # Check if answer is correct (different normalization for each type)
+    if question_type == "multiple_choice":
+        # Multiple choice: case-insensitive simple comparison
+        is_correct = user_answer.lower().strip() == question.answer.lower().strip()
+    else:
+        # Free text: normalize by removing punctuation and spaces
+        def normalize(text):
+            """Normalize text by removing commas, spaces, periods, and converting to lowercase."""
+            return text.replace(',', '').replace(' ', '').replace('.', '').lower().strip()
+        
+        is_correct = normalize(user_answer) == normalize(question.answer)
     
     # Record answer in database
     user_answer_record = UserAnswer(

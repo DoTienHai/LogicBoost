@@ -178,6 +178,42 @@ class TestMiniGameService:
             
             assert result["is_correct"] is True
     
+    def test_check_answer_free_text_normalization(self, app, db_session):
+        """Test that free text answers are normalized (remove commas, spaces, periods)."""
+        with app.app_context():
+            # Create a free text question with numeric answer
+            question = Question(
+                title="Math Test",
+                question="What is 10,000 + 5,000?",
+                explanation="Add them together: 15,000",
+                answer="15000",
+                mode="mini_game",
+                difficulty=1
+            )
+            db_session.add(question)
+            db_session.commit()
+            
+            # Test variations of the answer with different formatting
+            test_answers = [
+                ("15000", True),           # Exact match
+                ("15,000", True),          # With commas
+                ("15 000", True),          # With spaces
+                ("15.000", True),          # With periods (European notation)
+                ("15 , 0 0 0", True),      # Multiple spaces and commas
+                ("FIFTEEN THOUSAND", False),  # Text (should not match)
+                ("15001", False),          # Wrong number
+            ]
+            
+            for user_answer, should_be_correct in test_answers:
+                result = mini_game_service.check_answer(
+                    question.id,
+                    user_answer,
+                    time_taken=10
+                )
+                
+                assert result["is_correct"] is should_be_correct, \
+                    f"Answer '{user_answer}' should be correct={should_be_correct}, but got {result['is_correct']}"
+    
     def test_check_answer_nonexistent_question(self, app):
         """Test check_answer with nonexistent question ID."""
         with app.app_context():

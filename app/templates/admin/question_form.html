@@ -35,7 +35,7 @@
     </div>
     {% endif %}
 
-    <form method="POST" class="question-form">
+    <form method="POST" class="question-form" enctype="multipart/form-data">
         <!-- Sections 1 & 2: English & Vietnamese Side-by-Side -->
         <div class="form-sections-row">
             <!-- Section 1: English Content -->
@@ -120,11 +120,64 @@
             </div>
         </div>
 
-        <!-- Section 3: Answer -->
+        <!-- Section 3: Multiple Choice Options -->
+        <div class="form-section">
+            <div class="section-header">
+                <h2>📋 Multiple Choice Options</h2>
+                <span class="section-badge optional">Optional</span>
+            </div>
+            <div class="section-body">
+                <p style="margin-bottom: 15px; color: #666;">
+                    Leave all empty for free-text questions. Fill all 4 for multiple choice.
+                </p>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="option_a">Option A</label>
+                        <input 
+                            type="text" 
+                            id="option_a" 
+                            name="option_a" 
+                            value="{{ question.option_a if question else '' }}"
+                            placeholder="e.g., 15,000">
+                    </div>
+                    <div class="form-group">
+                        <label for="option_b">Option B</label>
+                        <input 
+                            type="text" 
+                            id="option_b" 
+                            name="option_b" 
+                            value="{{ question.option_b if question else '' }}"
+                            placeholder="e.g., 16,500">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="option_c">Option C</label>
+                        <input 
+                            type="text" 
+                            id="option_c" 
+                            name="option_c" 
+                            value="{{ question.option_c if question else '' }}"
+                            placeholder="e.g., 17,850">
+                    </div>
+                    <div class="form-group">
+                        <label for="option_d">Option D</label>
+                        <input 
+                            type="text" 
+                            id="option_d" 
+                            name="option_d" 
+                            value="{{ question.option_d if question else '' }}"
+                            placeholder="e.g., 18,750">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 4: Answer -->
         <div class="form-section">
             <div class="section-header">
                 <h2>✅ Correct Answer</h2>
-                <span class="section-badge">Free-text</span>
+                <span class="section-badge">Required</span>
             </div>
             <div class="section-body">
                 <div class="form-group">
@@ -134,24 +187,24 @@
                         id="answer" 
                         name="answer" 
                         value="{{ question.answer if question else '' }}"
-                        placeholder="Enter the correct answer"
+                        placeholder="For multiple choice: a, b, c, or d. For free-text: exact answer"
                         required>
-                    <small>User must enter this exact text (case-insensitive)</small>
+                    <small>Multiple choice: 'a', 'b', 'c', or 'd' | Free-text: exact text (case-insensitive)</small>
                 </div>
             </div>
         </div>
 
-        <!-- Section 4: Metadata -->
+        <!-- Section 5: Game Mode & Timing -->
         <div class="form-section">
             <div class="section-header">
-                <h2>⚙️ Settings</h2>
-                <span class="section-badge">Mode, Category & Timing</span>
+                <h2>⚙️ Game Mode & Timing</h2>
+                <span class="section-badge">Required</span>
             </div>
             <div class="section-body">
                 <div class="form-row">
                     <div class="form-group">
                         <label for="mode">Game Mode <span class="required-star">*</span></label>
-                        <select id="mode" name="mode" required>
+                        <select id="mode" name="mode" required onchange="toggleSubCategory()">
                             <option value="">-- Select a mode --</option>
                             <option value="daily_challenge" {% if question and question.mode == 'daily_challenge' %}selected{% endif %}>
                                 📅 Daily Challenge
@@ -180,6 +233,100 @@
             </div>
         </div>
 
+        <!-- Section 6: Difficulty -->
+        <div class="form-section">
+            <div class="section-header">
+                <h2>⭐ Difficulty Level</h2>
+                <span class="section-badge">Required</span>
+            </div>
+            <div class="section-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Difficulty <span class="required-star">*</span></label>
+                        <div class="difficulty-options">
+                            <label class="difficulty-option">
+                                <input type="radio" name="difficulty" value="1" 
+                                       {% if question and question.difficulty == 1 or not question %}checked{% endif %}>
+                                <span>★☆☆ Easy</span>
+                            </label>
+                            <label class="difficulty-option">
+                                <input type="radio" name="difficulty" value="2"
+                                       {% if question and question.difficulty == 2 %}checked{% endif %}>
+                                <span>★★☆ Medium</span>
+                            </label>
+                            <label class="difficulty-option">
+                                <input type="radio" name="difficulty" value="3"
+                                       {% if question and question.difficulty == 3 %}checked{% endif %}>
+                                <span>★★★ Hard</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="subcategory-group" style="display: none;">
+                        <label for="sub_category">Sub-category</label>
+                        <select id="sub_category" name="sub_category">
+                            <option value="">-- Select --</option>
+                            <option value="finance" {% if question and question.sub_category == 'finance' %}selected{% endif %}>
+                                💰 Finance
+                            </option>
+                            <option value="career" {% if question and question.sub_category == 'career' %}selected{% endif %}>
+                                📈 Career
+                            </option>
+                            <option value="business" {% if question and question.sub_category == 'business' %}selected{% endif %}>
+                                🏢 Business
+                            </option>
+                        </select>
+                        <small>Only for Real-world mode</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 7: Images -->
+        <div class="form-section">
+            <div class="section-header">
+                <h2>🖼️ Images</h2>
+                <span class="section-badge optional">Optional</span>
+            </div>
+            <div class="section-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="question_image">Question Image</label>
+                        <input 
+                            type="file" 
+                            id="question_image" 
+                            name="question_image" 
+                            accept="image/*"
+                            onchange="previewImage(this, 'question-image-preview')">
+                        <small>PNG or WebP, max 200KB. Shown in the question body.</small>
+                        <div id="question-image-preview" style="margin-top: 10px;">
+                            {% if question and question.question_image %}
+                            <img src="{{ url_for('static', filename='images/questions/' + question.question_image) }}" 
+                                 style="max-width: 200px; max-height: 150px; border: 1px solid #ddd; padding: 5px;">
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="explanation_image">Explanation Image</label>
+                        <input 
+                            type="file" 
+                            id="explanation_image" 
+                            name="explanation_image" 
+                            accept="image/*"
+                            onchange="previewImage(this, 'explanation-image-preview')">
+                        <small>PNG or WebP, max 200KB. Shown in the explanation section.</small>
+                        <div id="explanation-image-preview" style="margin-top: 10px;">
+                            {% if question and question.explanation_image %}
+                            <img src="{{ url_for('static', filename='images/questions/' + question.explanation_image) }}" 
+                                 style="max-width: 200px; max-height: 150px; border: 1px solid #ddd; padding: 5px;">
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Form Actions -->
         <div class="form-actions">
             <button type="submit" class="btn btn-primary btn-large">
@@ -195,23 +342,34 @@
 </div>
 
 <script>
-    // Update difficulty stars
-    const difficultySelect = document.getElementById('difficulty');
-    const difficultyDisplay = document.querySelector('.difficulty-display');
-    
-    function updateDifficultyStars() {
-        const level = parseInt(difficultySelect.value);
-        const stars = difficultyDisplay.querySelectorAll('.difficulty-star');
-        stars.forEach((star, index) => {
-            if (index < level) {
-                star.textContent = '★';
-            } else {
-                star.textContent = '☆';
-            }
-        });
+    // Toggle sub-category visibility based on selected mode
+    function toggleSubCategory() {
+        const mode = document.getElementById('mode').value;
+        const subCategoryGroup = document.getElementById('subcategory-group');
+        
+        if (mode === 'real_world') {
+            subCategoryGroup.style.display = 'block';
+        } else {
+            subCategoryGroup.style.display = 'none';
+        }
     }
 
-    difficultySelect.addEventListener('change', updateDifficultyStars);
-    updateDifficultyStars();
+    // Preview image before upload
+    function previewImage(input, previewElementId) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const previewDiv = document.getElementById(previewElementId);
+                previewDiv.innerHTML = '<img src="' + e.target.result + 
+                                     '" style="max-width: 200px; max-height: 150px; border: 1px solid #ddd; padding: 5px;">';
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        toggleSubCategory();
+    });
 </script>
 {% endblock %}
