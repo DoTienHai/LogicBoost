@@ -1,4 +1,3 @@
-"""Base template with navigation."""
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,25 +8,66 @@
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="navbar">
-        <div class="container">
-            <div class="navbar-brand">
-                <a href="{{ url_for('main.index') }}">LogicBoost</a>
-            </div>
-            <ul class="navbar-menu">
-                <li><a href="{{ url_for('daily_challenge.index') }}">Daily Challenge</a></li>
-                <li><a href="{{ url_for('mini_game.index') }}">Mini Game</a></li>
-                <li><a href="{{ url_for('real_world.index') }}">Real-world</a></li>
-                <li><a href="{{ url_for('admin.index') }}">Admin</a></li>
-            </ul>
-        </div>
-    </nav>
+    <div class="page-wrapper">
+        <!-- Header/Navigation -->
+        <header>
+            <nav class="navbar">
+                <div class="container">
+                    <div class="navbar-brand">
+                        <a href="{{ url_for('main.index') }}">🧠 LogicBoost</a>
+                    </div>
+                    <ul class="navbar-menu">
+                        <li><a href="{{ url_for('daily_challenge.index') }}">📅 Daily Challenge</a></li>
+                        <li><a href="{{ url_for('mini_game.index') }}">⚡ Mini Game</a></li>
+                        <li><a href="{{ url_for('real_world.index') }}">🌍 Real-world</a></li>
+                        <li><a href="{{ url_for('admin.index') }}">⚙️ Admin</a></li>
+                    </ul>
+                </div>
+            </nav>
+        </header>
 
-    <!-- Main Content -->
-    <main class="container">
-        {% block content %}{% endblock %}
-    </main>
+        <!-- Main Content -->
+        <main class="container">
+            {% block content %}{% endblock %}
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="container">
+                <div class="footer-content">
+                    <div class="footer-section">
+                        <h3>About LogicBoost</h3>
+                        <p>A daily mental fitness app for working adults. Sharpen your math skills and strategic thinking with real-life challenges.</p>
+                    </div>
+                    <div class="footer-section">
+                        <h3>Features</h3>
+                        <ul>
+                            <li><a href="{{ url_for('daily_challenge.index') }}">Daily Challenge</a></li>
+                            <li><a href="{{ url_for('mini_game.index') }}">Quick Mini Game</a></li>
+                            <li><a href="{{ url_for('real_world.index') }}">Real-world Problems</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-section">
+                        <h3>Resources</h3>
+                        <ul>
+                            <li><a href="{{ url_for('main.index') }}">Home</a></li>
+                            <li><a href="{{ url_for('admin.index') }}">Admin Panel</a></li>
+                            <li><a href="https://github.com/DoTienHai/LogicBoost" target="_blank">GitHub</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-section">
+                        <h3>Contact</h3>
+                        <p>Email: <a href="mailto:support@logicboost.com">support@logicboost.com</a></p>
+                        <p>Keep your mind sharp! 🧠</p>
+                    </div>
+                </div>
+                <div class="footer-bottom">
+                    <p>&copy; 2024 LogicBoost. All rights reserved.</p>
+                    <p>Made with ❤️ for working adults</p>
+                </div>
+            </div>
+        </footer>
+    </div>
 
     <!-- Scripts -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>

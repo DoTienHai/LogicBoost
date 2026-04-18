@@ -8,8 +8,17 @@
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    background-color: #f5f5f5;
-    color: #333;
+    background-color: #f8f9fa;
+    color: #2c3e50;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.page-wrapper {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
 }
 
 .container {
@@ -20,12 +29,13 @@ body {
 
 /* Navbar */
 .navbar {
-    background-color: #2c3e50;
-    color: white;
+    background-color: #e8f4f8;
+    color: #2c3e50;
     padding: 1rem 0;
     position: sticky;
     top: 0;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    border-bottom: 2px solid #b3e5fc;
 }
 
 .navbar .container {
@@ -37,7 +47,7 @@ body {
 .navbar-brand a {
     font-size: 1.5rem;
     font-weight: bold;
-    color: white;
+    color: #0277bd;
     text-decoration: none;
 }
 
@@ -48,19 +58,20 @@ body {
 }
 
 .navbar-menu a {
-    color: white;
+    color: #0277bd;
     text-decoration: none;
-    transition: opacity 0.3s;
+    transition: color 0.3s;
+    font-weight: 500;
 }
 
 .navbar-menu a:hover {
-    opacity: 0.8;
+    color: #01579b;
 }
 
 /* Main content */
 main {
     padding: 2rem 0;
-    min-height: calc(100vh - 80px);
+    flex: 1;
 }
 
 /* Hero */
@@ -71,13 +82,13 @@ main {
 
 .hero h1 {
     font-size: 3rem;
-    color: #2c3e50;
+    color: #0277bd;
     margin-bottom: 1rem;
 }
 
 .hero p {
     font-size: 1.2rem;
-    color: #555;
+    color: #546e7a;
 }
 
 /* Grid layouts */
@@ -85,8 +96,8 @@ main {
 .category-grid,
 .game-modes {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 2rem;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2.5rem;
     margin: 2rem 0;
 }
 
@@ -97,24 +108,26 @@ main {
 .problem-card {
     background: white;
     padding: 2rem;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    transition: transform 0.3s, box-shadow 0.3s;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
+    border: 2px solid #e8f4f8;
 }
 
 .feature-card:hover,
 .category-card:hover,
 .mode-card:hover,
 .problem-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(-6px);
+    box-shadow: 0 6px 16px rgba(2, 119, 189, 0.15);
+    border-color: #64b5f6;
 }
 
 .feature-card h2,
 .category-card h3,
 .mode-card h3,
 .problem-card h4 {
-    color: #2c3e50;
+    color: #0277bd;
     margin-bottom: 1rem;
 }
 
@@ -122,7 +135,7 @@ main {
 .category-card p,
 .mode-card p,
 .problem-card p {
-    color: #666;
+    color: #546e7a;
     margin-bottom: 1.5rem;
 }
 
@@ -139,30 +152,30 @@ main {
 }
 
 .btn-primary {
-    background-color: #3498db;
+    background-color: #64b5f6;
     color: white;
 }
 
 .btn-primary:hover {
-    background-color: #2980b9;
+    background-color: #42a5f5;
 }
 
 .btn-secondary {
-    background-color: #95a5a6;
+    background-color: #90caf9;
     color: white;
 }
 
 .btn-secondary:hover {
-    background-color: #7f8c8d;
+    background-color: #64b5f6;
 }
 
 .btn-danger {
-    background-color: #e74c3c;
+    background-color: #ef9a9a;
     color: white;
 }
 
 .btn-danger:hover {
-    background-color: #c0392b;
+    background-color: #e57373;
 }
 
 .btn-option {
@@ -171,16 +184,16 @@ main {
     padding: 1rem;
     margin: 0.5rem 0;
     text-align: left;
-    background-color: #ecf0f1;
-    color: #2c3e50;
+    background-color: #e3f2fd;
+    color: #0277bd;
     border: 2px solid transparent;
     transition: all 0.3s;
 }
 
 .btn-option:hover {
-    background-color: #3498db;
+    background-color: #81d4fa;
     color: white;
-    border-color: #3498db;
+    border-color: #64b5f6;
 }
 
 .btn-large {
@@ -233,7 +246,7 @@ main {
     display: block;
     margin-bottom: 0.5rem;
     font-weight: bold;
-    color: #2c3e50;
+    color: #0277bd;
 }
 
 .form-group input,
@@ -256,8 +269,8 @@ main {
 .form-group textarea:focus,
 .form-group select:focus {
     outline: none;
-    border-color: #3498db;
-    box-shadow: 0 0 4px rgba(52, 152, 219, 0.3);
+    border-color: #64b5f6;
+    box-shadow: 0 0 4px rgba(100, 181, 246, 0.3);
 }
 
 .form-actions {
@@ -274,8 +287,9 @@ table {
 }
 
 table thead {
-    background-color: #34495e;
-    color: white;
+    background-color: #b3e5fc;
+    color: #0277bd;
+    font-weight: bold;
 }
 
 table th {
@@ -289,24 +303,25 @@ table td {
 }
 
 table tbody tr:hover {
-    background-color: #f5f5f5;
+    background-color: #e3f2fd;
 }
 
 /* Stats boxes */
 .stat-box,
 .result-box,
 .info-box {
-    background-color: #ecf0f1;
+    background-color: #e3f2fd;
     padding: 1.5rem;
     border-radius: 8px;
     text-align: center;
     margin: 1rem 0;
+    border-left: 4px solid #64b5f6;
 }
 
 .stat-box h3,
 .result-box h3,
 .info-box h3 {
-    color: #2c3e50;
+    color: #0277bd;
     margin-bottom: 0.5rem;
 }
 
@@ -314,7 +329,7 @@ table tbody tr:hover {
 .result-value {
     font-size: 2rem;
     font-weight: bold;
-    color: #3498db;
+    color: #0277bd;
 }
 
 /* Game timer */
@@ -332,7 +347,75 @@ table tbody tr:hover {
     color: #e74c3c;
 }
 
-/* Responsive */
+/* Footer */
+.footer {
+    background-color: #e8f4f8;
+    border-top: 2px solid #b3e5fc;
+    padding: 3rem 0 2rem 0;
+    margin-top: 3rem;
+    color: #2c3e50;
+}
+
+.footer-content {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.footer-section h3 {
+    color: #0277bd;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+}
+
+.footer-section p {
+    color: #546e7a;
+    margin-bottom: 1rem;
+    line-height: 1.6;
+}
+
+.footer-section ul {
+    list-style: none;
+}
+
+.footer-section ul li {
+    margin-bottom: 0.5rem;
+}
+
+.footer-section a {
+    color: #0277bd;
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+.footer-section a:hover {
+    color: #01579b;
+    text-decoration: underline;
+}
+
+.footer-bottom {
+    text-align: center;
+    border-top: 1px solid #b3e5fc;
+    padding-top: 1.5rem;
+    color: #546e7a;
+    font-size: 0.9rem;
+}
+
+.footer-bottom p {
+    margin: 0.3rem 0;
+}
+
+/* Responsive - Tablet */
+@media (max-width: 1024px) {
+    .features-grid,
+    .category-grid,
+    .game-modes {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Responsive - Mobile */
 @media (max-width: 768px) {
     .navbar-menu {
         flex-direction: column;
@@ -351,5 +434,18 @@ table tbody tr:hover {
 
     .btn-option {
         padding: 0.75rem;
+    }
+
+    .footer-content {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    .footer {
+        padding: 2rem 0 1.5rem 0;
+    }
+
+    .footer-section h3 {
+        font-size: 1rem;
     }
 }
