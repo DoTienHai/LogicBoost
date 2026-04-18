@@ -1,6 +1,9 @@
 """Admin routes."""
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash
 from app.models import Question, db
+from app.services.import_service import import_from_excel
+import os
+from werkzeug.utils import secure_filename
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
@@ -154,13 +157,58 @@ def delete_question(question_id):
     return redirect(url_for("admin.index"))
 
 
-@admin_bp.route("/import")
+@admin_bp.route("/import", methods=["GET", "POST"])
 def import_page():
     """Excel import page."""
-    return render_template("admin/import_excel.html")
+    results = None
+    
+    if request.method == "POST":
+        # Check if file was uploaded
+        if "file" not in request.files:
+            results = {"errors": ["No file selected"], "success": 0}
+        else:
+            file = request.files["file"]
+            
+            if file.filename == "":
+                results = {"errors": ["No file selected"], "success": 0}
+            elif not file.filename.endswith((".xlsx", ".xls")):
+                results = {"errors": ["File must be .xlsx or .xls format"], "success": 0}
+            else:
+                try:
+                    # Save temporary file
+                    filename = secure_filename(file.filename)
+                    filepath = os.path.join("/tmp", filename)
+                    file.save(filepath)
+                    
+                    # Import questions from file
+                    results = import_from_excel(filepath)
+                    
+                    # Clean up temporary file
+                    if os.path.exists(filepath):
+                        os.remove(filepath)
+                    
+                except Exception as e:
+                    results = {"errors": [f"Error processing file: {str(e)}"], "success": 0}
+    
+    return render_template("admin/import_excel.html", results=results)
 
 
 @admin_bp.route("/import/template")
 def download_template():
     """Download Excel template."""
-    return "Template file here"
+    # For MVP, return a simple JSON describing the template structure
+    # In production, this would generate and serve an actual Excel file
+    template_info = {
+        "columns": [
+            "title", "title_vi",
+            "question", "question_vi",
+            "option_a", "option_b", "option_c", "option_d",
+            "answer",
+            "explanation", "explanation_vi",
+            "mode", "sub_category", "difficulty", "time_limit"
+        ],
+        "required_fields": ["title", "question", "answer", "explanation", "mode"],
+        "valid_modes": ["daily_challenge", "mini_game", "real_world"],
+        "valid_difficulties": [1, 2, 3],
+    }
+    return jsonify(template_info)

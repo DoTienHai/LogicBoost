@@ -5,23 +5,33 @@
 {% block content %}
 <div class="admin-form-container">
     <h1>{% if question %}Edit Question{% else %}Add New Question{% endif %}</h1>
-    <p>This is Question Form Page</p>
+    
+    {% if errors %}
+    <div class="alert alert-danger">
+        <h4>Validation Errors:</h4>
+        <ul>
+            {% for error in errors %}
+            <li>{{ error }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
 
     <form method="POST" class="question-form">
         <h2>English Content</h2>
         <div class="form-group">
-            <label>Title (EN)</label>
-            <input type="text" name="title" value="{{ question.title if question else '' }}" required>
+            <label>Title (EN) *</label>
+            <input type="text" name="title" value="{{ question.title if question else form_data.get('title', '') }}" required>
         </div>
 
         <div class="form-group">
-            <label>Question (EN)</label>
-            <textarea name="question" required>{{ question.question if question else '' }}</textarea>
+            <label>Question (EN) *</label>
+            <textarea name="question" required>{{ question.question if question else form_data.get('question', '') }}</textarea>
         </div>
 
         <div class="form-group">
-            <label>Explanation (EN)</label>
-            <textarea name="explanation" required>{{ question.explanation if question else '' }}</textarea>
+            <label>Explanation (EN) *</label>
+            <textarea name="explanation" required>{{ question.explanation if question else form_data.get('explanation', '') }}</textarea>
         </div>
 
         <h2>Vietnamese Content (Optional)</h2>
