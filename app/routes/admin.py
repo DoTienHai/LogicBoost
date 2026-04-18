@@ -104,26 +104,45 @@ def edit_question(question_id):
     question = Question.query.get_or_404(question_id)
 
     if request.method == "POST":
-        question.title = request.form.get("title")
-        question.title_vi = request.form.get("title_vi")
-        question.question = request.form.get("question")
-        question.question_vi = request.form.get("question_vi")
-        question.explanation = request.form.get("explanation")
-        question.explanation_vi = request.form.get("explanation_vi")
-        question.option_a = request.form.get("option_a")
-        question.option_b = request.form.get("option_b")
-        question.option_c = request.form.get("option_c")
-        question.option_d = request.form.get("option_d")
-        question.answer = request.form.get("answer")
-        question.mode = request.form.get("mode")
-        question.sub_category = request.form.get("sub_category")
-        question.difficulty = int(request.form.get("difficulty", 1))
-        question.time_limit = request.form.get("time_limit")
+        # Validate input
+        is_valid, errors = validate_question_data(request.form)
+        if not is_valid:
+            return render_template(
+                "admin/question_form.html",
+                question=question,
+                errors=errors,
+                form_data=request.form.to_dict()
+            ), 400
+        
+        try:
+            question.title = request.form.get("title")
+            question.title_vi = request.form.get("title_vi")
+            question.question = request.form.get("question")
+            question.question_vi = request.form.get("question_vi")
+            question.explanation = request.form.get("explanation")
+            question.explanation_vi = request.form.get("explanation_vi")
+            question.option_a = request.form.get("option_a")
+            question.option_b = request.form.get("option_b")
+            question.option_c = request.form.get("option_c")
+            question.option_d = request.form.get("option_d")
+            question.answer = request.form.get("answer")
+            question.mode = request.form.get("mode")
+            question.sub_category = request.form.get("sub_category")
+            question.difficulty = int(request.form.get("difficulty", 1))
+            question.time_limit = request.form.get("time_limit") or None
 
-        db.session.commit()
-        return redirect(url_for("admin.index"))
+            db.session.commit()
+            return redirect(url_for("admin.index"))
+        except Exception as e:
+            db.session.rollback()
+            return render_template(
+                "admin/question_form.html",
+                question=question,
+                errors=[f"Database error: {str(e)}"],
+                form_data=request.form.to_dict()
+            ), 500
 
-    return render_template("admin/question_form.html", question=question)
+    return render_template("admin/question_form.html", question=question, form_data={})
 
 
 @admin_bp.route("/question/<int:question_id>/delete", methods=["POST"])
