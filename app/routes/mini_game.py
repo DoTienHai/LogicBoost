@@ -1,7 +1,6 @@
 """Mini Game routes."""
 from flask import Blueprint, render_template, request, jsonify, session
-from app.models import Question, UserAnswer, db
-import random
+from app.services import mini_game_service
 
 mini_game_bp = Blueprint("mini_game", __name__, url_prefix="/mini-game")
 
@@ -32,36 +31,22 @@ def start():
 @mini_game_bp.route("/question")
 def question():
     """Get next question for mini game."""
-    # Get all mini_game questions
-    all_questions = Question.query.filter_by(mode="mini_game").all()
-    
-    if not all_questions:
-        return jsonify({"error": "No questions available"}), 404
-    
     # Get questions already answered in this session
     answered_ids = session.get("mini_game_answered", [])
     
-    # Find unanswered questions
-    available = [q for q in all_questions if q.id not in answered_ids]
+    # Get language preference (default English)
+    lang = request.args.get("lang", "en")
     
-    # If all answered or none available, start over
-    if not available:
-        available = all_questions
+    # Get random question
+    question_obj = mini_game_service.get_random_question(answered_ids)
     
-    # Pick random question
-    question_obj = random.choice(available)
+    if not question_obj:
+        return jsonify({"error": "No questions available"}), 404
     
-    return jsonify({
-        "id": question_obj.id,
-        "title": question_obj.title,
-        "question": question_obj.question,
-        "question_image": question_obj.question_image,
-        "option_a": question_obj.option_a,
-        "option_b": question_obj.option_b,
-        "option_c": question_obj.option_c,
-        "option_d": question_obj.option_d,
-        "time_limit": question_obj.time_limit or 60,  # Default 60 seconds
-    })
+    # Format question data
+    question_data = mini_game_service.format_question_data(question_obj, lang)
+    
+    return jsonify(question_data)
 
 
 @mini_game_bp.route("/submit-answer", methods=["POST"])
@@ -82,22 +67,13 @@ def submit_answer():
     user_answer = data.get("answer")
     time_taken = data.get("time_taken", 0)
     
-    question = Question.query.get_or_404(question_id)
+    # Check answer using service
+    result = mini_game_service.check_answer(question_id, user_answer, time_taken)
     
-    # Check answer (handle both multiple choice and free text)
-    is_correct = (question.answer.lower().strip() == 
-                  user_answer.lower().strip())
+    if "error" in result:
+        return jsonify(result), 404
     
-    # Record answer in database
-    user_answer_record = UserAnswer(
-        question_id=question_id,
-        question_type="multiple_choice" if question.option_a else "free_text",
-        chosen=user_answer,
-        is_correct=is_correct,
-        time_taken=time_taken,
-    )
-    db.session.add(user_answer_record)
-    db.session.commit()
+    is_correct = result["is_correct"]
     
     if is_correct:
         # Add to answered list and increment score
@@ -109,20 +85,21 @@ def submit_answer():
         
         return jsonify({
             "is_correct": True,
-            "correct_answer": question.answer,
+            "correct_answer": result["correct_answer"],
             "score": session["mini_game_score"],
             "game_over": False,
         })
     else:
         # Wrong answer = Game Over
+        final_score = session.get("mini_game_score", 0)
         session["mini_game_active"] = False
         session.modified = True
         
         return jsonify({
             "is_correct": False,
-            "correct_answer": question.answer,
-            "explanation": question.explanation,
-            "score": session["mini_game_score"],
+            "correct_answer": result["correct_answer"],
+            "explanation": result.get("explanation", ""),
+            "score": final_score,
             "game_over": True,
         })
 

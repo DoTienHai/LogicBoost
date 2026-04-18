@@ -24,7 +24,7 @@
     <!-- Answer Input Area -->
     <div class="answer-section" id="answer-section" style="display: none;">
         <div class="options" id="options"></div>
-        <input type="text" id="text-answer" placeholder="Type your answer..." style="display: none;">
+        <input type="text" id="text-answer" placeholder="Type your answer..." style="display: none;" onkeypress="if(event.key==='Enter') submitAnswer()">
         <button onclick="submitAnswer()" class="btn btn-primary btn-large">Submit Answer</button>
     </div>
 
@@ -107,39 +107,60 @@ function displayQuestion(question) {
         ];
         
         optionsContainer.innerHTML = options.map(opt => `
-            <button class="option-btn" onclick="selectAnswer('${opt.key}')">
+            <button class="option-btn" onclick="selectAnswer('${opt.key}')" data-answer="${opt.key}">
                 <span class="option-letter">${opt.key.toUpperCase()}</span>
                 <span class="option-text">${opt.text}</span>
             </button>
         `).join('');
         
         document.getElementById('text-answer').style.display = 'none';
+        document.getElementById('text-answer').value = '';
     } else {
         // Free text input
         optionsContainer.innerHTML = '';
         document.getElementById('text-answer').style.display = 'block';
+        document.getElementById('text-answer').value = '';
         document.getElementById('text-answer').focus();
     }
 }
 
+let selectedAnswer = null;
+
 function selectAnswer(key) {
-    document.getElementById('text-answer').value = key;
-    submitAnswer();
+    // Store selected answer
+    selectedAnswer = key;
+    
+    // Visual feedback: highlight selected option
+    document.querySelectorAll('.option-btn').forEach(btn => {
+        btn.classList.remove('selected');
+    });
+    event.target.closest('.option-btn').classList.add('selected');
 }
 
 function submitAnswer() {
     if (!gameActive) return;
     
-    const answer = document.getElementById('text-answer').value || 
-                   document.querySelector('.option-btn.selected')?.getAttribute('data-answer');
+    // Get answer from either text input or selected option
+    let answer = null;
+    
+    const textInput = document.getElementById('text-answer');
+    if (textInput.style.display !== 'none' && textInput.value.trim()) {
+        // Free text answer
+        answer = textInput.value.trim();
+    } else if (selectedAnswer) {
+        // Multiple choice answer
+        answer = selectedAnswer;
+    }
     
     if (!answer) {
         alert('Please select or type an answer');
         return;
     }
     
-    const startTime = Date.now();
     const timeUsed = 60 - timeRemaining;
+    
+    // Disable submit while processing
+    gameActive = false;
     
     fetch('{{ url_for("mini_game.submit_answer") }}', {
         method: 'POST',
@@ -160,35 +181,61 @@ function submitAnswer() {
             // Correct answer - Load next question
             currentScore = data.score;
             document.getElementById('score').textContent = currentScore;
-            document.getElementById('text-answer').value = '';
-            timeRemaining = 60;
-            loadQuestion();
+            
+            // Show visual feedback (green flash)
+            showFeedback(true);
+            
+            // Reset for next question
+            selectedAnswer = null;
+            timeRemaining = currentQuestion.time_limit || 60;
+            gameActive = true;
+            
+            // Load next question after short delay
+            setTimeout(() => {
+                loadQuestion();
+            }, 500);
         }
     })
     .catch(err => {
         alert('Error submitting answer');
         console.error(err);
+        gameActive = true;
     });
+}
+
+function showFeedback(isCorrect) {
+    const section = document.getElementById('question-section');
+    section.style.backgroundColor = isCorrect ? '#d4edda' : '#f8d7da';
+    setTimeout(() => {
+        section.style.backgroundColor = '';
+    }, 500);
 }
 
 function endGame(wrongAnswerData = null) {
     gameActive = false;
     clearInterval(timerInterval);
+    
+    // Hide question and answer sections
+    document.getElementById('question-section').style.display = 'none';
     document.getElementById('answer-section').style.display = 'none';
     
+    // Show game over screen
     const gameOverScreen = document.getElementById('game-over-screen');
     gameOverScreen.style.display = 'block';
     document.getElementById('final-score').textContent = currentScore;
     
-    if (wrongAnswerData) {
+    // Display wrong answer details if available
+    if (wrongAnswerData && !wrongAnswerData.is_correct) {
         const reviewHtml = `
             <div class="wrong-answer">
-                <h4>Last Question (Wrong Answer)</h4>
-                <p><strong>Your answer:</strong> ${wrongAnswerData.chosen}</p>
+                <h4>❌ Last Question (Wrong Answer)</h4>
                 <p><strong>Correct answer:</strong> ${wrongAnswerData.correct_answer}</p>
+                ${wrongAnswerData.explanation ? `<div style="margin-top: 15px; text-align: left;"><strong>Explanation:</strong><br>${wrongAnswerData.explanation}</div>` : ''}
             </div>
         `;
         document.getElementById('answer-review').innerHTML = reviewHtml;
+    } else {
+        document.getElementById('answer-review').innerHTML = '<p>Time ran out!</p>';
     }
 }
 
@@ -288,6 +335,12 @@ function playAgain() {
 .option-btn:hover {
     background: #e9ecef;
     border-color: #007bff;
+}
+
+.option-btn.selected {
+    background: #cfe2ff;
+    border-color: #007bff;
+    border-width: 3px;
 }
 
 .option-letter {
