@@ -22,6 +22,10 @@
                         <li><a href="{{ url_for('real_world.index') }}">🌍 Real-world</a></li>
                         <li><a href="{{ url_for('admin.index') }}">⚙️ Admin</a></li>
                     </ul>
+                    <div class="language-switcher">
+                        <button id="lang-en" class="lang-btn active" onclick="switchLanguage('en')">EN</button>
+                        <button id="lang-vi" class="lang-btn" onclick="switchLanguage('vi')">VI</button>
+                    </div>
                 </div>
             </nav>
         </header>
