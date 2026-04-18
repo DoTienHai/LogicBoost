@@ -1,6 +1,6 @@
 """Excel import service for questions."""
 import openpyxl
-from app.models import Question, db
+from app.models import Question, SubCategory, db
 
 
 def import_from_excel(filepath):
@@ -98,6 +98,20 @@ def import_from_excel(filepath):
                     time_limit = None
                 
                 # ---- SAVE TO DATABASE ----
+                # Look up sub_category_id if provided
+                sub_category_id = None
+                if sub_category:
+                    sub_cat = SubCategory.query.filter_by(name=str(sub_category).strip().lower()).first()
+                    if sub_cat:
+                        sub_category_id = sub_cat.id
+                    elif str(mode).strip() == 'real_world':
+                        # For real_world mode, sub_category is required
+                        results['errors'].append(
+                            f"Row {row_idx}: Sub-category '{sub_category}' not found. "
+                            f"Valid values: finance, career, business"
+                        )
+                        continue
+                
                 question_obj = Question(
                     title=str(title).strip(),
                     title_vi=str(title_vi).strip() if title_vi else None,
@@ -111,7 +125,7 @@ def import_from_excel(filepath):
                     explanation=str(explanation).strip(),
                     explanation_vi=str(explanation_vi).strip() if explanation_vi else None,
                     mode=str(mode).strip(),
-                    sub_category=str(sub_category).strip() if sub_category else None,
+                    sub_category_id=sub_category_id,
                     difficulty=difficulty,
                     time_limit=time_limit,
                 )

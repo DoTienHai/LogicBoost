@@ -1,6 +1,6 @@
 """Real-world Problems routes."""
 from flask import Blueprint, render_template, request, jsonify
-from app.models import Question, db
+from app.models import Question, SubCategory, db
 
 real_world_bp = Blueprint("real_world", __name__, url_prefix="/real-world")
 
@@ -15,8 +15,18 @@ def index():
 @real_world_bp.route("/<category>")
 def category(category):
     """Get problems by category."""
+    # Look up sub_category_id by name
+    sub_cat = SubCategory.query.filter_by(name=category).first()
+    if not sub_cat:
+        return render_template(
+            "real_world/index.html",
+            questions=[],
+            selected_category=category,
+            error="Category not found"
+        )
+    
     questions = Question.query.filter_by(
-        mode="real_world", sub_category=category
+        mode="real_world", sub_category_id=sub_cat.id
     ).all()
     return render_template(
         "real_world/index.html",

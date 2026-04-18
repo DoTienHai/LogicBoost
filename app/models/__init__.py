@@ -6,5 +6,6 @@ db = SQLAlchemy()
 from app.models.question import Question
 from app.models.user_answer import UserAnswer
 from app.models.stats import Stats
+from app.models.sub_category import SubCategory
 
-__all__ = ["db", "Question", "UserAnswer", "Stats"]
+__all__ = ["db", "Question", "UserAnswer", "Stats", "SubCategory"]

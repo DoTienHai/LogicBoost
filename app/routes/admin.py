@@ -1,6 +1,6 @@
 """Admin routes."""
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash, send_from_directory
-from app.models import Question, db
+from app.models import Question, SubCategory, db
 from app.services.import_service import import_from_excel
 import os
 from werkzeug.utils import secure_filename
@@ -118,6 +118,12 @@ def validate_question_data(data):
     if data.get("mode") == "real_world" and not data.get("sub_category"):
         errors.append("Sub-category is required for Real-world mode")
     
+    # Validate sub_category exists if provided
+    if data.get("sub_category"):
+        sub_cat = SubCategory.query.filter_by(name=data.get("sub_category")).first()
+        if not sub_cat:
+            errors.append(f"Sub-category '{data.get('sub_category')}' does not exist. Valid values: finance, career, business")
+    
     return len(errors) == 0, errors
 
 
@@ -142,6 +148,13 @@ def add_question():
             ), 400
         
         try:
+            # Look up sub_category_id if provided
+            sub_category_id = None
+            if request.form.get("sub_category"):
+                sub_cat = SubCategory.query.filter_by(name=request.form.get("sub_category")).first()
+                if sub_cat:
+                    sub_category_id = sub_cat.id
+            
             # Create question object (without ID yet)
             question = Question(
                 title=request.form.get("title"),
@@ -156,7 +169,7 @@ def add_question():
                 option_d=request.form.get("option_d") or None,
                 answer=request.form.get("answer"),
                 mode=request.form.get("mode"),
-                sub_category=request.form.get("sub_category") or None,
+                sub_category_id=sub_category_id,
                 difficulty=int(request.form.get("difficulty", 1)),
                 time_limit=request.form.get("time_limit") or None,
             )
@@ -218,6 +231,13 @@ def edit_question(question_id):
             ), 400
         
         try:
+            # Look up sub_category_id if provided
+            sub_category_id = None
+            if request.form.get("sub_category"):
+                sub_cat = SubCategory.query.filter_by(name=request.form.get("sub_category")).first()
+                if sub_cat:
+                    sub_category_id = sub_cat.id
+            
             question.title = request.form.get("title")
             question.title_vi = request.form.get("title_vi")
             question.question = request.form.get("question")
@@ -230,7 +250,7 @@ def edit_question(question_id):
             question.option_d = request.form.get("option_d") or None
             question.answer = request.form.get("answer")
             question.mode = request.form.get("mode")
-            question.sub_category = request.form.get("sub_category") or None
+            question.sub_category_id = sub_category_id
             question.difficulty = int(request.form.get("difficulty", 1))
             question.time_limit = request.form.get("time_limit") or None
             

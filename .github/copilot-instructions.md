@@ -132,6 +132,27 @@ LogicBoost/
 
 ## 🗄️ Database Schema
 
+### Table: `sub_categories`
+> Stores categorization options for real-world questions. Allows admin to manage categories flexibly.
+
+```sql
+CREATE TABLE sub_categories (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    name            TEXT NOT NULL UNIQUE,   -- 'finance', 'career', 'business'
+    display_name    TEXT NOT NULL,          -- '💰 Finance', '📈 Career', '🏢 Business'
+    description     TEXT,                   -- Optional description
+    created_at      DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+**Seed Data:**
+```python
+# Default categories
+SubCategory.create(name='finance', display_name='💰 Finance', description='Personal finance, investments, loans')
+SubCategory.create(name='career', display_name='📈 Career', description='Career decisions, job negotiations, skills')
+SubCategory.create(name='business', display_name='🏢 Business', description='Business strategies, management, entrepreneurship')
+```
+
 ### Table: `questions`
 > Stores pure question content. Independent of how it is displayed.
 > English is the default language. Vietnamese fields are optional — falls back to English if null.
@@ -155,24 +176,26 @@ CREATE TABLE questions (
     question_image        TEXT,                   -- Image shown in the question body
     explanation_image     TEXT,                   -- Image shown in the explanation
 
-    -- Answer options (shared across languages)
-    -- REMOVED: No multiple choice options, free-text answer only
-    option_a              TEXT,
-    option_b              TEXT,
-    option_c              TEXT,
-    option_d              TEXT,
+    -- Answer options (optional - for future use)
+    option_a              TEXT,                   -- Optional (leave null for free-text)
+    option_b              TEXT,                   -- Optional (leave null for free-text)
+    option_c              TEXT,                   -- Optional (leave null for free-text)
+    option_d              TEXT,                   -- Optional (leave null for free-text)
 
-    -- Correct answer (FREE-TEXT ONLY)
-    -- User must match this text exactly (case-insensitive)
+    -- Correct answer (FREE-TEXT OR MULTIPLE CHOICE)
+    -- For multiple choice: 'a', 'b', 'c', or 'd'
+    -- For free-text: exact text user must enter (case-insensitive, punctuation-normalized)
     answer                TEXT NOT NULL,
 
     -- Metadata
     mode                  TEXT NOT NULL,          -- 'daily_challenge', 'mini_game', 'real_world'
-    sub_category          TEXT,                   -- 'finance', 'career', 'business' (real_world only)
+    sub_category_id       INTEGER,                -- FK → sub_categories.id (only for real_world mode)
     difficulty            INTEGER DEFAULT 1,      -- 1 (easy) → 3 (hard)
     time_limit            INTEGER,                -- Seconds (mini_game only, null = no limit)
 
-    created_at            DATETIME DEFAULT CURRENT_TIMESTAMP
+    created_at            DATETIME DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (sub_category_id) REFERENCES sub_categories(id) ON DELETE SET NULL
 );
 ```
 
@@ -187,7 +210,9 @@ CREATE TABLE user_answers (
     chosen          TEXT NOT NULL,          -- 'a','b','c','d' or free text input
     is_correct      BOOLEAN NOT NULL,
     time_taken      INTEGER,                -- Seconds taken to answer
-    answered_at     DATETIME DEFAULT CURRENT_TIMESTAMP
+    answered_at     DATETIME DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
 );
 ```
 
