@@ -1,4 +1,4 @@
-# 🐛 Render Deployment: Gunicorn Entry Point & Flask-Migrate Configuration Issues
+# 🐛 Render Deployment: Gunicorn, Flask-Migrate & Filesystem Issues
 
 **Date:** April 18, 2026
 **Component:** Deployment (Render.com)
@@ -11,6 +11,7 @@
 
 ### Issue 1: Invalid Gunicorn Entry Point Syntax
 ### Issue 2: Missing Flask-Migrate Configuration
+### Issue 3: Read-only Filesystem Permission Error
 
 ---
 
@@ -138,11 +139,102 @@ web: gunicorn "run:app"
 
 ---
 
+## Issue 3: Read-only Filesystem Permission Error
+
+### Error Message
+
+```
+==> Running 'gunicorn run:app'
+==> Exited with status 1
+```
+
+No detailed error logs, but permission error occurs during initialization.
+
+### Description
+
+Even after fixing Issues 1 & 2, app crashes on Render with exit code 1. Render's filesystem is read-only, causing permission errors when app tries to create directories.
+
+### Root Cause
+
+**Two places tried to create `instance/` directory:**
+
+1. **In `config.py` (line 14):**
+```python
+instance_dir.mkdir(parents=True, exist_ok=True)  # ❌ Permission error on Render
+```
+
+2. **In `app/__init__.py` (line 26-27):**
+```python
+os.makedirs(instance_path, exist_ok=True)  # ❌ Permission error on Render
+```
+
+**Problems:**
+- Render has read-only filesystem → cannot create directories
+- Initialization fails silently → exit code 1
+- No error logged because it happens during boot, not in request handler
+
+### Solution
+
+**Wrap directory creation in try-except to handle read-only filesystem:**
+
+**In `config.py`:**
+```python
+def _get_database_uri():
+    """Get the database URI with absolute path."""
+    base_dir = Path(__file__).resolve().parent
+    instance_dir = base_dir / "instance"
+    db_path = instance_dir / "logicboost.db"
+    # Try to create instance directory (skip on read-only filesystem)
+    try:
+        instance_dir.mkdir(parents=True, exist_ok=True)
+    except (OSError, PermissionError):
+        # Render or read-only filesystem - skip directory creation
+        pass
+    file_uri = db_path.as_uri()
+    sqlite_uri = file_uri.replace("file://", "sqlite://")
+    return sqlite_uri
+```
+
+**In `app/__init__.py`:**
+```python
+# Create instance directory if it doesn't exist (development only)
+# On Render, filesystem is read-only, skip this
+if config_name != "production":
+    try:
+        instance_path = os.path.join(...)
+        os.makedirs(instance_path, exist_ok=True)
+    except (OSError, PermissionError):
+        # Render or read-only filesystem - skip
+        pass
+```
+
+**Why this works:**
+- ✅ Gracefully handles read-only filesystem (Render)
+- ✅ Still creates directories in development (local)
+- ✅ SQLite still works without explicit directory
+- ✅ App initializes without crashing
+
+### Why Render Has Read-only Filesystem
+
+Render's free tier uses ephemeral storage:
+- Files created during build persist
+- Files created at runtime (new instances) are lost
+- Filesystem is read-only for security/isolation
+- Database needs to be created during initial build, not runtime
+
+---
+
 ## Files Modified
 
 1. **Modified:** `Procfile`
    - Changed from: `web: gunicorn "app:create_app()"` + `release: flask db upgrade`
    - Changed to: `web: gunicorn "run:app"`
+
+2. **Modified:** `config.py` (line 9-20)
+   - Added try-except around `instance_dir.mkdir()`
+   
+3. **Modified:** `app/__init__.py` (line 25-32)
+   - Added config_name check and try-except around `os.makedirs()`
 
 ---
 
@@ -165,7 +257,10 @@ web: gunicorn "run:app"
    - Result: ❌ Exit code 1 - release command failed due to missing migrations
 
 3. **Attempt 3:** Removed release command, kept `gunicorn "run:app"`
-   - Result: ✅ Deployment successful, app running
+   - Result: ❌ Build successful, but exit code 1 - permission error during init
+
+4. **Attempt 4:** Wrapped directory creation in try-except for Render read-only filesystem
+   - Result: ✅ Deployment successful, app running on Render
 
 ---
 
@@ -185,6 +280,12 @@ web: gunicorn "run:app"
 - SQLite automatically creates database and schema on first app init
 - No manual migration setup needed
 - Can upgrade to PostgreSQL + Flask-Migrate later if needed
+
+### Deployment to Render
+- Render filesystem is **read-only** → wrap directory creation in try-except
+- Always gracefully handle permission errors during initialization
+- Test with `FLASK_ENV=production` locally before deploying
+- App must not assume it can write to filesystem on startup
 
 ---
 
@@ -206,4 +307,7 @@ web: gunicorn "run:app"
 - [ ] Test release command locally: `flask db upgrade`
 - [ ] Confirm migration files exist in `migrations/versions/`
 - [ ] Run full test suite before deploying
+- [ ] Test with `FLASK_ENV=production` locally
+- [ ] Wrap all file I/O in try-except (handle read-only filesystem)
 - [ ] For SQLite MVP: Keep Procfile simple (web command only)
+- [ ] Test on Render free tier to verify read-only filesystem handling

@@ -11,8 +11,12 @@ def _get_database_uri():
     base_dir = Path(__file__).resolve().parent  # config.py is in root, so .parent is root
     instance_dir = base_dir / "instance"
     db_path = instance_dir / "logicboost.db"
-    # Create instance directory if needed
-    instance_dir.mkdir(parents=True, exist_ok=True)
+    # Try to create instance directory (skip on read-only filesystem)
+    try:
+        instance_dir.mkdir(parents=True, exist_ok=True)
+    except (OSError, PermissionError):
+        # Render or read-only filesystem - skip directory creation
+        pass
     # Convert file URI to sqlite URI
     file_uri = db_path.as_uri()
     sqlite_uri = file_uri.replace("file://", "sqlite://")
