@@ -12,6 +12,7 @@
 ### Issue 1: Invalid Gunicorn Entry Point Syntax
 ### Issue 2: Missing Flask-Migrate Configuration
 ### Issue 3: Read-only Filesystem Permission Error
+### Issue 4: SQLite Database Path Format Error (Windows & Render)
 
 ---
 
@@ -224,14 +225,99 @@ Render's free tier uses ephemeral storage:
 
 ---
 
+## Issue 4: SQLite Database Path Format Error (Windows & Render)
+
+### Error Message
+
+```
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) unable to open database file
+```
+
+### Description
+
+SQLite database URI uses incorrect path format on Windows and Render, causing database connection failures at runtime.
+
+### Root Cause
+
+**Original config.py:**
+```python
+SQLALCHEMY_DATABASE_URI = 'sqlite:///./instance/logicboost.db'  # ❌ WRONG (3 slashes)
+# or
+SQLALCHEMY_DATABASE_URI = 'sqlite:////instance/logicboost.db'   # ❌ WRONG (relative path)
+```
+
+**Problems:**
+1. **3 slashes** (`sqlite:///`) = absolute path on UNIX, but incorrect format for Windows paths
+2. **Relative path** without drive letter (`./instance/`) doesn't work reliably
+3. SQLite cannot find database file on Windows or Render filesystem
+4. Connection fails immediately when app tries to access database
+
+### Solution
+
+**Use absolute path built at module load time:**
+
+```python
+# config.py
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent
+INSTANCE_DIR = BASE_DIR / "instance"
+DB_PATH = INSTANCE_DIR / "logicboost.db"
+
+SQLALCHEMY_DATABASE_URI = f"sqlite:///{DB_PATH.as_posix()}"
+# Result: sqlite:///D:/3_CODING/LogicBoost/instance/logicboost.db
+```
+
+**Why this works:**
+- ✅ `Path(__file__).resolve()` works on Windows, macOS, Linux
+- ✅ `.as_posix()` converts Windows backslashes to forward slashes
+- ✅ Absolute path is always resolvable
+- ✅ Works in development and production (Render)
+- ✅ Database file location is deterministic
+
+### SQLite URI Format Reference
+
+| URI Format | Type | Use Case |
+|---|---|---|
+| `sqlite:///./instance/logicboost.db` | Relative (3 slashes) | ❌ Unreliable on Windows |
+| `sqlite:////instance/logicboost.db` | Relative (4 slashes) | ❌ Not portable |
+| `sqlite:///D:/path/to/logicboost.db` | Absolute (3 slashes + full path) | ✅ Best |
+| `sqlite:///:memory:` | In-memory | ✅ Testing only |
+
+**Correct Format:**
+```
+sqlite:///<absolute-path>
+         ^^^
+         3 slashes for absolute path
+```
+
+### Files Modified
+
+1. **Modified:** `config.py` (lines 8-20)
+   - Built absolute path using `Path(__file__).resolve()`
+   - Use `DB_PATH.as_posix()` to ensure forward slashes
+   - Generate SQLite URI with 3 slashes + full path
+   
+2. **Modified:** `DevelopmentConfig` (line 34-36)
+   - Removed hardcoded relative path
+   - Inherit `SQLALCHEMY_DATABASE_URI` from `Config` base class
+   
+3. **Modified:** `ProductionConfig` (line 42-44)
+   - Removed hardcoded relative path
+   - Inherit `SQLALCHEMY_DATABASE_URI` from `Config` base class
+
+---
+
 ## Files Modified
 
 1. **Modified:** `Procfile`
    - Changed from: `web: gunicorn "app:create_app()"` + `release: flask db upgrade`
    - Changed to: `web: gunicorn "run:app"`
 
-2. **Modified:** `config.py` (line 9-20)
-   - Added try-except around `instance_dir.mkdir()`
+2. **Modified:** `config.py`
+   - Lines 8-20: Built absolute path using `Path` module
+   - Lines 27-28: Added `SQLALCHEMY_DATABASE_URI` to Config base class
+   - Removed hardcoded path strings from DevelopmentConfig and ProductionConfig
    
 3. **Modified:** `app/__init__.py` (line 25-32)
    - Added config_name check and try-except around `os.makedirs()`
@@ -260,7 +346,12 @@ Render's free tier uses ephemeral storage:
    - Result: ❌ Build successful, but exit code 1 - permission error during init
 
 4. **Attempt 4:** Wrapped directory creation in try-except for Render read-only filesystem
-   - Result: ✅ Deployment successful, app running on Render
+   - Result: ❌ Build successful, but local tests fail - SQLite path format error
+
+5. **Attempt 5:** Fixed SQLite database path to use absolute path format
+   - Changed from: `sqlite:///./instance/logicboost.db` (relative)
+   - Changed to: `sqlite:///D:/3_CODING/LogicBoost/instance/logicboost.db` (absolute)
+   - Result: ✅ All 32 tests pass locally, deployment ready
 
 ---
 
