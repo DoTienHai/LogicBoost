@@ -67,13 +67,61 @@ def generate_template():
     ws.add_data_validation(sub_cat_dv)
     sub_cat_dv.add("M2:M1000")
     
-    difficulty_dv = DataValidation(type="list", formula1='"1,2,3"', allow_blank=True)
-    difficulty_dv.error = 'Select: 1, 2, or 3'
+    difficulty_dv = DataValidation(type="list", formula1='"1,2,3,4,5"', allow_blank=True)
+    difficulty_dv.error = 'Select: 1 (Very Easy), 2 (Easy), 3 (Medium), 4 (Hard), or 5 (Very Hard)'
     ws.add_data_validation(difficulty_dv)
     difficulty_dv.add("N2:N1000")
     
     # Freeze header row
     ws.freeze_panes = "A2"
+    
+    # ===== CREATE HELP SHEET =====
+    help_ws = wb.create_sheet("Help")
+    help_ws.append(["Column", "Type", "Valid Values", "Example"])
+    
+    help_data = [
+        ["title", "Required", "English title (max 200 chars)", "Compound Interest Calculation"],
+        ["title_vi", "Optional", "Vietnamese title (fallback to English)", "Tính Lãi Kép"],
+        ["question", "Required", "English question (Markdown + LaTeX)", "You have **10M VNĐ** at **6%/year**. After 3 years: $$FV = PV × (1+r)^n$$"],
+        ["question_vi", "Optional", "Vietnamese question (Markdown + LaTeX)", "Bạn có **10 triệu VNĐ**..."],
+        ["option_a", "Optional", "Leave blank for free-text questions", "16,105,100"],
+        ["option_b", "Optional", "Leave blank for free-text questions", "17,100,000"],
+        ["option_c", "Optional", "Leave blank for free-text questions", "18,205,000"],
+        ["option_d", "Optional", "Leave blank for free-text questions", "19,500,000"],
+        ["answer", "Required", "a/b/c/d for MC, or exact text for free-text", "a"],
+        ["explanation", "Required", "English explanation (Markdown + LaTeX)", "Using formula: $FV = 10M × (1.06)^3 = 11.91M$"],
+        ["explanation_vi", "Optional", "Vietnamese explanation (Markdown + LaTeX)", "Sử dụng công thức..."],
+        ["mode", "Required", "daily_challenge | mini_game | real_world", "daily_challenge"],
+        ["sub_category", "Optional*", "finance | career | business (*required for real_world)", "finance"],
+        ["difficulty", "Optional", "1 (🟢 Very Easy) | 2 (🟡 Easy) | 3 (🟠 Medium) | 4 (🔴 Hard) | 5 (⚫ Very Hard)", "2"],
+        ["time_limit", "Optional", "Seconds (for mini_game mode only)", "60"]
+    ]
+    
+    for row in help_data:
+        help_ws.append(row)
+    
+    # Style help sheet header
+    help_header_fill = PatternFill(start_color="70AD47", end_color="70AD47", fill_type="solid")
+    help_header_font = Font(bold=True, color="FFFFFF", size=11)
+    
+    for col_idx in range(1, 5):
+        cell = help_ws.cell(row=1, column=col_idx)
+        cell.fill = help_header_fill
+        cell.font = help_header_font
+        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    
+    # Set help sheet column widths
+    help_ws.column_dimensions['A'].width = 15
+    help_ws.column_dimensions['B'].width = 12
+    help_ws.column_dimensions['C'].width = 60
+    help_ws.column_dimensions['D'].width = 40
+    
+    # Format help sheet rows
+    for row_idx in range(2, len(help_data) + 2):
+        for col_idx in range(1, 5):
+            cell = help_ws.cell(row=row_idx, column=col_idx)
+            cell.alignment = Alignment(vertical="top", wrap_text=True)
+            cell.border = border
     
     # Save file
     output_path = os.path.join(

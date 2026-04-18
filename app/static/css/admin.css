@@ -1203,8 +1203,8 @@
    ======================================== */
 
 .difficulty-options {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 12px;
 }
 
@@ -1229,6 +1229,7 @@
 .difficulty-option span {
     font-weight: 500;
     color: #333;
+    font-size: 14px;
 }
 
 .difficulty-option:hover {

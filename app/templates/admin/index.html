@@ -27,12 +27,13 @@
                     </tr>
                 </thead>
                 <tbody>
+                    {% set difficulty_map = {1: '🟢 Very Easy', 2: '🟡 Easy', 3: '🟠 Medium', 4: '🔴 Hard', 5: '⚫ Very Hard'} %}
                     {% for q in questions %}
                         <tr>
                             <td>{{ q.id }}</td>
                             <td>{{ q.title }}</td>
                             <td>{{ q.mode }}</td>
-                            <td>{{ q.difficulty }}</td>
+                            <td>{{ difficulty_map.get(q.difficulty, 'Unknown') }}</td>
                             <td>
                                 <a href="{{ url_for('admin.edit_question', question_id=q.id) }}" class="btn btn-sm btn-secondary">Edit</a>
                                 <form method="POST" action="{{ url_for('admin.delete_question', question_id=q.id) }}" style="display:inline;">

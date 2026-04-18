@@ -247,17 +247,27 @@
                             <label class="difficulty-option">
                                 <input type="radio" name="difficulty" value="1" 
                                        {% if question and question.difficulty == 1 or not question %}checked{% endif %}>
-                                <span>★☆☆ Easy</span>
+                                <span>🟢 Very Easy</span>
                             </label>
                             <label class="difficulty-option">
                                 <input type="radio" name="difficulty" value="2"
                                        {% if question and question.difficulty == 2 %}checked{% endif %}>
-                                <span>★★☆ Medium</span>
+                                <span>🟡 Easy</span>
                             </label>
                             <label class="difficulty-option">
                                 <input type="radio" name="difficulty" value="3"
                                        {% if question and question.difficulty == 3 %}checked{% endif %}>
-                                <span>★★★ Hard</span>
+                                <span>🟠 Medium</span>
+                            </label>
+                            <label class="difficulty-option">
+                                <input type="radio" name="difficulty" value="4"
+                                       {% if question and question.difficulty == 4 %}checked{% endif %}>
+                                <span>🔴 Hard</span>
+                            </label>
+                            <label class="difficulty-option">
+                                <input type="radio" name="difficulty" value="5"
+                                       {% if question and question.difficulty == 5 %}checked{% endif %}>
+                                <span>⚫ Very Hard</span>
                             </label>
                         </div>
                     </div>
