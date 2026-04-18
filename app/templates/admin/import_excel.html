@@ -16,17 +16,17 @@
 
     <!-- Timeline Progress -->
     <div class="timeline">
-        <div class="timeline-step active">
+        <div class="timeline-step {% if not results %}active{% endif %}" id="timeline-step-1">
             <div class="timeline-dot">1</div>
             <div class="timeline-label">Download</div>
         </div>
         <div class="timeline-line"></div>
-        <div class="timeline-step">
+        <div class="timeline-step" id="timeline-step-2">
             <div class="timeline-dot">2</div>
-            <div class="timeline-label">Fill & Upload</div>
+            <div class="timeline-label">Upload</div>
         </div>
         <div class="timeline-line"></div>
-        <div class="timeline-step">
+        <div class="timeline-step {% if results %}active{% endif %}" id="timeline-step-3">
             <div class="timeline-dot">✓</div>
             <div class="timeline-label">Complete</div>
         </div>
@@ -36,7 +36,8 @@
     <div class="import-container">
 
         <!-- ============ STEP 1: DOWNLOAD ============ -->
-        <div class="step-card step-1-active">
+        {% if not results %}
+        <div class="step-card" id="step-1">
             <div class="card-header">
                 <h2><span class="card-step">Step 1</span> Download Template</h2>
                 <p class="card-description">Get the Excel template with all required columns</p>
@@ -58,14 +59,20 @@
                 <a href="{{ url_for('admin.download_template') }}" class="btn btn-download btn-large">
                     📥 Download Excel Template
                 </a>
+                
+                <button type="button" class="btn btn-primary btn-large" onclick="goToStep2()" style="margin-top: 1rem;">
+                    Next →
+                </button>
             </div>
         </div>
+        {% endif %}
 
-        <!-- ============ STEP 2: FILL & UPLOAD ============ -->
-        <div class="step-card">
+        <!-- ============ STEP 2: UPLOAD ============ -->
+        {% if not results %}
+        <div class="step-card" id="step-2" style="display: none;">
             <div class="card-header">
-                <h2><span class="card-step">Step 2</span> Fill in Questions & Upload</h2>
-                <p class="card-description">Complete the template and upload for import</p>
+                <h2><span class="card-step">Step 2</span> Upload File</h2>
+                <p class="card-description">Upload your completed Excel file for import</p>
             </div>
             
             <div class="card-body">
@@ -135,33 +142,48 @@
                 </form>
             </div>
         </div>
+        {% endif %}
 
         <!-- ============ STEP 3: RESULTS ============ -->
-        {% if success is defined or errors is defined %}
-        <div class="step-card result-card">
+        {% if results %}
+        <div class="step-card result-card no-badge">
             <div class="card-header">
-                <h2><span class="card-step">Step 3</span> Import Results</h2>
+                <h2><span class="card-step">Step 3</span> Status</h2>
             </div>
             
             <div class="card-body">
-                {% if success > 0 %}
+                {% if results.success > 0 and not results.errors %}
                 <div class="import-result success">
                     <div class="result-icon">✅</div>
                     <div class="result-content">
-                        <h3>Import Successful!</h3>
-                        <p><strong>{{ success }}</strong> question(s) have been imported successfully</p>
+                        <h3>Update Successful!</h3>
+                        <p><strong>{{ results.success }}</strong> question(s) have been imported successfully without any errors.</p>
+                    </div>
+                </div>
+                {% elif results.success > 0 and results.errors %}
+                <div class="import-result warning">
+                    <div class="result-icon">⚠️</div>
+                    <div class="result-content">
+                        <h3>Partial Update Successful</h3>
+                        <p><strong>{{ results.success }}</strong> question(s) were imported, but <strong>{{ results.errors|length }}</strong> row(s) failed.</p>
+                    </div>
+                </div>
+                {% else %}
+                <div class="import-result errors">
+                    <div class="result-icon">❌</div>
+                    <div class="result-content">
+                        <h3>Update Failed</h3>
+                        <p>No questions were imported. Please check the errors below.</p>
                     </div>
                 </div>
                 {% endif %}
 
-                {% if errors %}
-                <div class="import-result errors">
-                    <div class="result-icon">⚠️</div>
+                {% if results.errors %}
+                <div class="import-result errors-detail">
                     <div class="result-content">
-                        <h3>Validation Errors Found</h3>
-                        <p>{{ errors|length }} row(s) had issues. Please review:</p>
+                        <h3>Reason for Failure:</h3>
                         <ul class="error-list">
-                            {% for error in errors %}
+                            {% for error in results.errors %}
                             <li><code>{{ error }}</code></li>
                             {% endfor %}
                         </ul>
@@ -171,7 +193,7 @@
                 {% endif %}
 
                 <div class="result-actions">
-                    <a href="{{ url_for('admin.import_excel') }}" class="btn btn-primary">⬆️ Upload Another File</a>
+                    <a href="{{ url_for('admin.import_page') }}" class="btn btn-primary">⬆️ Upload Another File</a>
                     <a href="{{ url_for('admin.index') }}" class="btn btn-secondary">➔ Go to Questions</a>
                 </div>
             </div>
@@ -193,6 +215,17 @@
     const submitBtn = document.getElementById('submitBtn');
     const fileName = document.getElementById('fileName');
 
+    // Step navigation
+    function goToStep2() {
+        // Hide Step 1
+        document.getElementById('step-1').style.display = 'none';
+        // Show Step 2
+        document.getElementById('step-2').style.display = 'block';
+        // Update timeline
+        document.getElementById('timeline-step-1').classList.remove('active');
+        document.getElementById('timeline-step-2').classList.add('active');
+    }
+
     // File selection
     fileInput.addEventListener('change', (e) => {
         if (e.target.files.length > 0) {
@@ -200,7 +233,6 @@
             fileZone.classList.add('hidden');
             fileInfo.classList.remove('hidden');
             submitBtn.disabled = false;
-            updateTimeline();
         }
     });
 
@@ -225,7 +257,6 @@
             fileZone.classList.add('hidden');
             fileInfo.classList.remove('hidden');
             submitBtn.disabled = false;
-            updateTimeline();
         }
     });
 
@@ -235,31 +266,6 @@
         fileZone.classList.remove('hidden');
         fileInfo.classList.add('hidden');
         submitBtn.disabled = true;
-        resetTimeline();
-    }
-
-    // Timeline management
-    function updateTimeline() {
-        const steps = document.querySelectorAll('.timeline-step');
-        if (steps.length >= 2) {
-            steps[0].classList.remove('active');
-            steps[1].classList.add('active');
-        }
-
-        const stepCard = document.querySelector('.step-1-active');
-        if (stepCard) {
-            stepCard.classList.remove('step-1-active');
-        }
-    }
-
-    function resetTimeline() {
-        const steps = document.querySelectorAll('.timeline-step');
-        if (steps.length >= 1) {
-            steps[0].classList.add('active');
-        }
-        if (steps.length >= 2) {
-            steps[1].classList.remove('active');
-        }
     }
 
     // Form submit validation
@@ -267,10 +273,11 @@
         if (!fileInput.files.length) {
             e.preventDefault();
             alert('Please select a file');
+        } else {
+            // Update timeline to step 3 when submitting
+            document.getElementById('timeline-step-2').classList.remove('active');
+            document.getElementById('timeline-step-3').classList.add('active');
         }
     });
-
-    // Initialize timeline
-    resetTimeline();
 </script>
 {% endblock %}

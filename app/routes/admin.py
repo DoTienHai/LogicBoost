@@ -4,6 +4,7 @@ from app.models import Question, db
 from app.services.import_service import import_from_excel
 import os
 from werkzeug.utils import secure_filename
+import tempfile
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
@@ -175,17 +176,20 @@ def import_page():
                 results = {"errors": ["File must be .xlsx or .xls format"], "success": 0}
             else:
                 try:
-                    # Save temporary file
-                    filename = secure_filename(file.filename)
-                    filepath = os.path.join("/tmp", filename)
-                    file.save(filepath)
+                    # Create temporary file in system temp directory
+                    with tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False) as tmp_file:
+                        filepath = tmp_file.name
+                        file.save(filepath)
                     
                     # Import questions from file
                     results = import_from_excel(filepath)
                     
                     # Clean up temporary file
-                    if os.path.exists(filepath):
-                        os.remove(filepath)
+                    try:
+                        if os.path.exists(filepath):
+                            os.remove(filepath)
+                    except Exception:
+                        pass  # Ignore cleanup errors
                     
                 except Exception as e:
                     results = {"errors": [f"Error processing file: {str(e)}"], "success": 0}
