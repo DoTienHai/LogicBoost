@@ -1,5 +1,5 @@
 """Admin routes."""
-from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash
+from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash, send_from_directory
 from app.models import Question, db
 from app.services.import_service import import_from_excel
 import os
@@ -196,19 +196,13 @@ def import_page():
 @admin_bp.route("/import/template")
 def download_template():
     """Download Excel template."""
-    # For MVP, return a simple JSON describing the template structure
-    # In production, this would generate and serve an actual Excel file
-    template_info = {
-        "columns": [
-            "title", "title_vi",
-            "question", "question_vi",
-            "option_a", "option_b", "option_c", "option_d",
-            "answer",
-            "explanation", "explanation_vi",
-            "mode", "sub_category", "difficulty", "time_limit"
-        ],
-        "required_fields": ["title", "question", "answer", "explanation", "mode"],
-        "valid_modes": ["daily_challenge", "mini_game", "real_world"],
-        "valid_difficulties": [1, 2, 3],
-    }
-    return jsonify(template_info)
+    template_dir = os.path.join(os.path.dirname(__file__), "..", "static", "templates")
+    template_file = "questions_template.xlsx"
+    
+    # Check if template file exists
+    template_path = os.path.join(template_dir, template_file)
+    if not os.path.exists(template_path):
+        flash("Template file not found. Please contact admin.", "error")
+        return redirect(url_for("admin.import_page"))
+    
+    return send_from_directory(template_dir, template_file, as_attachment=True)
