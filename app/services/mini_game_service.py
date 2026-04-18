@@ -75,6 +75,7 @@ def check_answer(question_id, user_answer, time_taken=0):
     result = {
         "is_correct": is_correct,
         "correct_answer": question.answer,
+        "time_limit": question.time_limit or 60,
     }
     
     # Include explanation if wrong

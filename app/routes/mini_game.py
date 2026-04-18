@@ -14,6 +14,10 @@ def index():
 @mini_game_bp.route("/play")
 def play():
     """Play mini game page - loads questions dynamically."""
+    # Always initialize a fresh session when entering play page
+    session["mini_game_active"] = True
+    session["mini_game_score"] = 0
+    session["mini_game_answered"] = []
     return render_template("mini_game/play.html")
 
 
@@ -88,6 +92,7 @@ def submit_answer():
             "correct_answer": result["correct_answer"],
             "score": session["mini_game_score"],
             "game_over": False,
+            "time_limit": result.get("time_limit", 60)
         })
     else:
         # Wrong answer = Game Over
