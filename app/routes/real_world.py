@@ -1,11 +1,13 @@
 """Real-world Problems routes."""
 from flask import Blueprint, render_template, request, jsonify
+from flask_login import login_required
 from app.models import Question, SubCategory, db
 
 real_world_bp = Blueprint("real_world", __name__, url_prefix="/real-world")
 
 
 @real_world_bp.route("/")
+@login_required
 def index():
     """Real-world problems by category."""
     categories = ["finance", "career", "business"]

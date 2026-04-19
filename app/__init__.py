@@ -45,7 +45,7 @@ def create_app(config_name: str = None) -> Flask:
     login_manager = LoginManager()
     login_manager.init_app(app)
     login_manager.login_view = "auth.login"
-    login_manager.login_message = "Please log in to access this page."
+    login_manager.login_message = ""  # Disable auto-message; auth routes handle flashing
     
     from app.models import User
     

@@ -15,15 +15,17 @@
         </div>
 
         <!-- Flash messages -->
-        {% if session.get('_flashes') %}
-            <div class="flashes-container">
-                {% for category, message in session.get('_flashes', []) %}
-                    <div class="alert alert-{{ category }}">
-                        {{ message }}
-                    </div>
-                {% endfor %}
-            </div>
-        {% endif %}
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flashes-container">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
 
         <form id="register-form" method="POST" action="{{ url_for('auth.register') }}" novalidate>
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

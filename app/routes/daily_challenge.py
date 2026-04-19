@@ -1,11 +1,13 @@
 """Daily Challenge routes."""
 from flask import Blueprint, render_template, request, jsonify, current_app, session, redirect, url_for
+from flask_login import login_required
 from app.models import Question, UserAnswer, Stats, db
 
 daily_challenge_bp = Blueprint("daily_challenge", __name__, url_prefix="/daily-challenge")
 
 
 @daily_challenge_bp.route("/")
+@login_required
 def index():
     """Daily challenge lobby."""
     return render_template("daily_challenge/index.html")

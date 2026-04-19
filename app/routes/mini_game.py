@@ -1,11 +1,13 @@
 """Mini Game routes."""
 from flask import Blueprint, render_template, request, jsonify, session
+from flask_login import login_required
 from app.services import mini_game_service
 
 mini_game_bp = Blueprint("mini_game", __name__, url_prefix="/mini-game")
 
 
 @mini_game_bp.route("/")
+@login_required
 def index():
     """Mini game lobby page."""
     return render_template("mini_game/index.html")
