@@ -7,17 +7,18 @@
 3. [🛠️ Tech Stack](#-tech-stack)
 4. [📁 Project Structure](#-project-structure)
 5. [🗄️ Database Schema](#-database-schema)
-6. [🖼️ Image Handling](#-image-handling)
-7. [📝 Markdown + LaTeX Rendering](#-markdown--latex-rendering)
-8. [🌐 Bilingual Support (EN / VI)](#-bilingual-support-en--vi)
-9. [🎨 Rendering by `question_type`](#-rendering-by-question_type)
-10. [✅ Answer Checking](#-answer-checking)
-11. [🛠️ Admin Panel](#-admin-panel)
-12. [🎮 Feature Specifications](#-feature-specifications)
-13. [📐 Coding Guidelines](#-coding-guidelines)
-14. [🔧 Environment Variables (.env)](#-environment-variables-env)
-15. [❌ Out of Scope for MVP](#-out-of-scope-for-mvp)
-16. [✅ Code Quality Rules](#-code-quality-rules)
+6. [� Authentication & Authorization](#-authentication--authorization)
+7. [🖼️ Image Handling](#-image-handling)
+8. [📝 Markdown + LaTeX Rendering](#-markdown--latex-rendering)
+9. [🌐 Bilingual Support (EN / VI)](#-bilingual-support-en--vi)
+10. [🎨 Rendering by `question_type`](#-rendering-by-question_type)
+11. [✅ Answer Checking](#-answer-checking)
+12. [🛠️ Admin Panel](#-admin-panel)
+13. [🎮 Feature Specifications](#-feature-specifications)
+14. [📐 Coding Guidelines](#-coding-guidelines)
+15. [🔧 Environment Variables (.env)](#-environment-variables-env)
+16. [❌ Out of Scope for MVP](#-out-of-scope-for-mvp)
+17. [✅ Code Quality Rules](#-code-quality-rules)
 
 ---
 
@@ -55,6 +56,7 @@ LogicBoost/
 │   ├── routes/
 │   │   ├── __init__.py
 │   │   ├── main.py                         # Home page routes
+│   │   ├── auth.py                         # Authentication routes (login, register, logout)
 │   │   ├── daily_challenge.py              # Daily Challenge routes
 │   │   ├── mini_game.py                    # Quick Mini Game routes
 │   │   ├── real_world.py                   # Real-world Problem routes
@@ -62,11 +64,18 @@ LogicBoost/
 │   │
 │   ├── models/
 │   │   ├── __init__.py
+│   │   ├── user.py                         # User model with password hashing
+│   │   ├── role.py                         # Role model (admin, content_creator, user)
+│   │   ├── permission.py                   # Permission model
 │   │   ├── question.py                     # Question model
-│   │   └── user_answer.py                  # User answer model
+│   │   ├── user_answer.py                  # User answer model
+│   │   ├── difficulty.py                   # Difficulty enum
+│   │   ├── stats.py                        # Stats model
+│   │   └── sub_category.py                 # SubCategory model
 │   │
 │   ├── services/
 │   │   ├── __init__.py
+│   │   ├── auth_service.py                 # Authentication & user management
 │   │   ├── daily_challenge_service.py      # Daily challenge logic
 │   │   ├── mini_game_service.py            # Mini game logic
 │   │   ├── real_world_service.py           # Real-world scenario logic
@@ -77,6 +86,10 @@ LogicBoost/
 │   ├── templates/
 │   │   ├── base.html                       # Base layout
 │   │   ├── index.html                      # Home page
+│   │   ├── auth/
+│   │   │   ├── login.html                  # Login page
+│   │   │   ├── register.html               # User registration page
+│   │   │   └── profile.html                # User profile & settings
 │   │   ├── daily_challenge/
 │   │   │   ├── index.html                  # Daily challenge lobby
 │   │   │   ├── question.html               # Question display
@@ -90,20 +103,25 @@ LogicBoost/
 │   │   │   ├── scenario.html               # Scenario + question
 │   │   │   └── explanation.html            # Step-by-step explanation
 │   │   ├── admin/
-│   │   │   │   ├── index.html                  # Admin dashboard (question list)
+│   │   │   ├── index.html                  # Admin dashboard (question list)
 │   │   │   ├── question_form.html          # Add / edit single question
-│   │   │   └── import_excel.html           # Upload Excel file
+│   │   │   ├── import_excel.html           # Upload Excel file
+│   │   │   ├── users.html                  # User management list
+│   │   │   ├── user_form.html              # Add / edit user and assign roles
+│   │   │   └── roles.html                  # Role & permission management
 │   │   └── error.html
 │   │
 │   └── static/
 │       ├── css/
 │       │   ├── main.css
+│       │   ├── auth.css
 │       │   ├── daily_challenge.css
 │       │   ├── mini_game.css
 │       │   ├── real_world.css
 │       │   └── admin.css
 │       ├── js/
 │       │   ├── main.js
+│       │   ├── auth.js
 │       │   ├── daily_challenge.js
 │       │   ├── mini_game.js
 │       │   ├── real_world.js
@@ -131,6 +149,109 @@ LogicBoost/
 ```
 
 ## 🗄️ Database Schema
+
+### Table: `users`
+> Stores user account information with secure password hashing.
+
+```sql
+CREATE TABLE users (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    username        TEXT NOT NULL UNIQUE,           -- Unique login identifier
+    email           TEXT NOT NULL UNIQUE,           -- Email for contact
+    password_hash   TEXT NOT NULL,                  -- Hashed password (bcrypt)
+    first_name      TEXT,                           -- User's first name
+    last_name       TEXT,                           -- User's last name
+    is_active       BOOLEAN DEFAULT 1,              -- Account enabled/disabled
+    created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### Table: `roles`
+> Stores user roles with permissions. Three default roles: admin, content_creator, user.
+
+```sql
+CREATE TABLE roles (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    name            TEXT NOT NULL UNIQUE,          -- 'admin', 'content_creator', 'user'
+    display_name    TEXT NOT NULL,                 -- Display label
+    description     TEXT,                          -- Role purpose
+    created_at      DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+**Seed Data:**
+```python
+# Default roles
+Role.create(name='admin', display_name='Administrator', description='Full access to all features and user management')
+Role.create(name='content_creator', display_name='Content Creator', description='Can manage questions and import Excel')
+Role.create(name='user', display_name='User', description='Can only play games and view questions')
+```
+
+### Table: `permissions`
+> Stores individual permissions that can be assigned to roles.
+
+```sql
+CREATE TABLE permissions (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    name            TEXT NOT NULL UNIQUE,          -- 'view_questions', 'edit_questions', 'manage_users'
+    display_name    TEXT NOT NULL,                 -- Human readable
+    description     TEXT,                          -- What this permission allows
+    category        TEXT,                          -- 'content', 'user_management', 'system'
+    created_at      DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+**Seed Data:**
+```python
+# Content Permissions
+Permission.create(name='view_questions', display_name='View Questions', category='content')
+Permission.create(name='create_questions', display_name='Create Questions', category='content')
+Permission.create(name='edit_questions', display_name='Edit Questions', category='content')
+Permission.create(name='delete_questions', display_name='Delete Questions', category='content')
+Permission.create(name='import_excel', display_name='Import Excel', category='content')
+
+# User Management Permissions
+Permission.create(name='view_users', display_name='View Users', category='user_management')
+Permission.create(name='create_users', display_name='Create Users', category='user_management')
+Permission.create(name='edit_users', display_name='Edit Users', category='user_management')
+Permission.create(name='delete_users', display_name='Delete Users', category='user_management')
+Permission.create(name='assign_roles', display_name='Assign Roles', category='user_management')
+
+# System Permissions
+Permission.create(name='manage_roles', display_name='Manage Roles', category='system')
+Permission.create(name='manage_permissions', display_name='Manage Permissions', category='system')
+```
+
+### Table: `role_permissions` (Junction)
+> Many-to-many relationship between roles and permissions.
+
+```sql
+CREATE TABLE role_permissions (
+    role_id         INTEGER NOT NULL,
+    permission_id   INTEGER NOT NULL,
+    created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
+    
+    PRIMARY KEY (role_id, permission_id),
+    FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE,
+    FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE
+);
+```
+
+### Table: `user_roles` (Junction)
+> Many-to-many relationship between users and roles. A user can have multiple roles.
+
+```sql
+CREATE TABLE user_roles (
+    user_id         INTEGER NOT NULL,
+    role_id         INTEGER NOT NULL,
+    assigned_at     DATETIME DEFAULT CURRENT_TIMESTAMP,
+    
+    PRIMARY KEY (user_id, role_id),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE
+);
+```
 
 ### Table: `sub_categories`
 > Stores categorization options for real-world questions. Allows admin to manage categories flexibly.
@@ -263,7 +384,134 @@ CREATE TABLE stats (
 
 ---
 
-## 🖼️ Image Handling
+## � Authentication & Authorization
+
+### User Registration & Login
+- Users self-register with **email** and **password**
+- Passwords hashed with **bcrypt** (not stored plain text)
+- Session-based authentication using Flask-Login
+- Login required for all features except viewing home page
+
+### Default Admin User
+On first app startup, create a default admin account:
+```python
+# app/__init__.py
+if not User.query.filter_by(username='admin').first():
+    admin_user = User(
+        username='admin',
+        email='admin@logicboost.local',
+        password='admin123',  # Must be changed in production!
+        first_name='Admin',
+        is_active=True
+    )
+    admin_role = Role.query.filter_by(name='admin').first()
+    admin_user.roles.append(admin_role)
+    db.session.add(admin_user)
+    db.session.commit()
+```
+
+### Role-Based Access Control (RBAC)
+Three default roles with different permission levels:
+
+| Role | Description | Can Do |
+|------|-------------|--------|
+| **Admin** | Full system access | Manage users, roles, permissions, content, all game features |
+| **Content Creator** | Question management | Create/edit/delete questions, import Excel, play games |
+| **User** | Player only | Play daily challenges, mini games, real-world problems |
+
+### Permission System
+Permissions are granular and assigned to roles:
+- **Content:** view_questions, create_questions, edit_questions, delete_questions, import_excel
+- **User Management:** view_users, create_users, edit_users, delete_users, assign_roles
+- **System:** manage_roles, manage_permissions
+
+### Decorators & Route Protection
+```python
+# Use Flask-Login decorators
+from flask_login import login_required, current_user
+
+# Protect routes
+@auth_bp.route('/profile')
+@login_required
+def profile():
+    return render_template('auth/profile.html', user=current_user)
+
+# Check specific permissions
+def require_permission(permission_name):
+    def decorator(f):
+        @functools.wraps(f)
+        @login_required
+        def decorated_function(*args, **kwargs):
+            if not current_user.has_permission(permission_name):
+                abort(403)  # Forbidden
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
+
+# Usage
+@admin_bp.route('/admin/users')
+@require_permission('view_users')
+def list_users():
+    users = User.query.all()
+    return render_template('admin/users.html', users=users)
+```
+
+### Authentication Routes
+| Method | Route | Description |
+|--------|-------|-------------|
+| GET | `/auth/login` | Login page |
+| POST | `/auth/login` | Process login |
+| GET | `/auth/register` | Registration page |
+| POST | `/auth/register` | Create new user |
+| GET | `/auth/logout` | Logout & destroy session |
+| GET | `/auth/profile` | View/edit own profile |
+| POST | `/auth/profile` | Update profile |
+
+### User Management Routes (Admin Only)
+| Method | Route | Description |
+|--------|-------|-------------|
+| GET | `/admin/users` | List all users |
+| GET | `/admin/users/<id>` | View user details |
+| GET | `/admin/users/<id>/edit` | Edit user form |
+| POST | `/admin/users/<id>/edit` | Update user |
+| DELETE | `/admin/users/<id>` | Delete user |
+| POST | `/admin/users/<id>/assign-role` | Add role to user |
+| DELETE | `/admin/users/<id>/remove-role/<role_id>` | Remove role from user |
+
+### Auth Service (`services/auth_service.py`)
+```python
+class AuthService:
+    @staticmethod
+    def register_user(username, email, password, first_name='', last_name=''):
+        """Register a new user with default 'user' role"""
+        # Validate username/email unique
+        # Hash password
+        # Create user
+        # Assign default 'user' role
+        
+    @staticmethod
+    def login_user(username, password):
+        """Authenticate user and return user object or None"""
+        # Find user by username
+        # Verify password
+        # Return user if valid
+        
+    @staticmethod
+    def change_password(user_id, old_password, new_password):
+        """Change user password"""
+        
+    @staticmethod
+    def assign_role(user_id, role_id):
+        """Assign a role to a user"""
+        
+    @staticmethod
+    def revoke_role(user_id, role_id):
+        """Remove a role from a user"""
+```
+
+---
+
+## �🖼️ Image Handling
 
 ### Naming Convention
 ```
@@ -675,11 +923,9 @@ DATABASE_URL=sqlite:///instance/logicboost.db
 
 ## ❌ Out of Scope for MVP
 
-- **User Authentication / Accounts** — Allows users to register and log in with a personal account. Enables saving personal progress, answer history, and preferences across sessions. Requires secure password handling, session management, and potentially OAuth (e.g. Google login). Adds significant complexity to the data model and security requirements.
+- **Leaderboard & Social Features** — Displays a ranked list of top-performing users based on score, speed, or accuracy. Includes social interactions such as following other users, comparing results with friends, and sharing achievements. Depends on tracking user stats across sessions and requires real-time or near-real-time data updates.
 
-- **Leaderboard & Social Features** — Displays a ranked list of top-performing users based on score, speed, or accuracy. Includes social interactions such as following other users, comparing results with friends, and sharing achievements. Depends on user accounts being implemented first and requires real-time or near-real-time data updates.
-
-- **Streak Tracking & Push Notifications** — Tracks how many consecutive days a user has completed a daily challenge and rewards consistency. Push notifications remind users to return each day to maintain their streak. Requires a user account system, a background job scheduler, and integration with a notification service (e.g. Firebase Cloud Messaging).
+- **Streak Tracking & Push Notifications** — Tracks how many consecutive days a user has completed a daily challenge and rewards consistency. Push notifications remind users to return each day to maintain their streak. Requires a background job scheduler and integration with a notification service (e.g. Firebase Cloud Messaging).
 
 - **Payment / Subscription Model** — Introduces a paywall for premium content or an ad-free experience. Requires integration with a payment gateway (e.g. Stripe), subscription lifecycle management, and enforcement of access tiers across the app. Significant legal, financial, and UX complexity.
 
