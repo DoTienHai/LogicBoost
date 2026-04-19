@@ -1,0 +1,375 @@
+/**
+ * Mini Game - Quick Challenge Styling
+ * Includes timer, options, game-over screen styling
+ */
+
+.mini-game-play-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* ─────────────────────────────────────
+   Game Header (Timer + Score)
+   ───────────────────────────────────── */
+
+.game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.timer-box {
+    text-align: center;
+}
+
+.timer {
+    font-size: 48px;
+    font-weight: bold;
+    color: #dc3545;
+    min-width: 80px;
+    font-family: 'Courier New', monospace;
+}
+
+.timer-label {
+    display: block;
+    color: #666;
+    font-size: 14px;
+    margin-top: 5px;
+}
+
+.score-box {
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.score {
+    color: #28a745;
+    margin-left: 10px;
+}
+
+/* ─────────────────────────────────────
+   Question Display
+   ───────────────────────────────────── */
+
+.question-section {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 30px;
+    margin-bottom: 20px;
+    transition: background-color 0.5s ease;
+}
+
+.question-section h3 {
+    margin-top: 0;
+    color: #333;
+}
+
+.question-content {
+    font-size: 18px;
+    line-height: 1.6;
+    color: #333;
+}
+
+.question-content img {
+    max-width: 100%;
+    margin: 15px 0;
+    border-radius: 4px;
+    display: block;
+}
+
+/* Handle KaTeX rendered math */
+.question-content .katex-display {
+    margin: 20px 0;
+}
+
+.question-content .katex {
+    font-size: 1.1em;
+}
+
+/* ─────────────────────────────────────
+   Answer Section (Options + Input)
+   ───────────────────────────────────── */
+
+.answer-section {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.options {
+    display: grid;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+/* Multiple Choice Buttons */
+
+.option-btn {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    background: #f8f9fa;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.3s ease;
+    font-size: 16px;
+    text-align: left;
+}
+
+.option-btn:hover {
+    background: #e9ecef;
+    border-color: #007bff;
+    transform: translateY(-2px);
+}
+
+.option-btn:active {
+    transform: translateY(0);
+}
+
+.option-btn.selected {
+    background: #cfe2ff;
+    border-color: #007bff;
+    border-width: 3px;
+    padding: 14px 15px; /* Adjust for border-width change */
+}
+
+.option-letter {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: #007bff;
+    color: white;
+    border-radius: 50%;
+    margin-right: 15px;
+    font-weight: bold;
+    flex-shrink: 0;
+}
+
+.option-text {
+    flex: 1;
+    font-size: 16px;
+}
+
+/* Free Text Input */
+
+#text-answer {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    font-family: inherit;
+    box-sizing: border-box;
+}
+
+#text-answer:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+}
+
+/* ─────────────────────────────────────
+   Game Over Screen
+   ───────────────────────────────────── */
+
+.game-over-screen {
+    background: white;
+    border: 2px solid #dc3545;
+    border-radius: 8px;
+    padding: 40px;
+    text-align: center;
+}
+
+.game-over-screen h2 {
+    color: #dc3545;
+    margin-bottom: 30px;
+    font-size: 32px;
+}
+
+.final-score {
+    font-size: 32px;
+    font-weight: bold;
+    color: #28a745;
+    margin: 30px 0;
+}
+
+.final-score p {
+    margin: 0;
+}
+
+.answer-review {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 4px;
+    margin: 20px 0;
+    text-align: left;
+}
+
+.wrong-answer {
+    color: #dc3545;
+}
+
+.wrong-answer h4 {
+    margin-top: 0;
+    margin-bottom: 15px;
+}
+
+.wrong-answer p {
+    margin: 10px 0;
+}
+
+.buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 30px;
+    flex-wrap: wrap;
+}
+
+/* ─────────────────────────────────────
+   Loading Indicator
+   ───────────────────────────────────── */
+
+.loading {
+    text-align: center;
+    padding: 40px 20px;
+    font-size: 18px;
+    color: #666;
+}
+
+/* ─────────────────────────────────────
+   Button Styles
+   ───────────────────────────────────── */
+
+.btn-large {
+    padding: 12px 30px;
+    font-size: 16px;
+    width: 100%;
+}
+
+/* ─────────────────────────────────────
+   Responsive Design
+   ───────────────────────────────────── */
+
+@media (max-width: 768px) {
+    .mini-game-play-container {
+        padding: 15px;
+    }
+
+    .game-header {
+        flex-direction: column;
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+
+    .timer {
+        font-size: 40px;
+    }
+
+    .question-section {
+        padding: 20px;
+        margin-bottom: 15px;
+    }
+
+    .question-content {
+        font-size: 16px;
+    }
+
+    .option-btn {
+        padding: 12px;
+    }
+
+    .option-letter {
+        width: 36px;
+        height: 36px;
+        font-size: 14px;
+    }
+
+    .option-text {
+        font-size: 14px;
+    }
+
+    #text-answer {
+        padding: 10px;
+        font-size: 16px;
+    }
+
+    .game-over-screen {
+        padding: 30px 20px;
+    }
+
+    .game-over-screen h2 {
+        font-size: 24px;
+        margin-bottom: 20px;
+    }
+
+    .final-score {
+        font-size: 24px;
+    }
+
+    .buttons {
+        flex-direction: column;
+    }
+
+    .btn-large {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .timer {
+        font-size: 36px;
+        min-width: 60px;
+    }
+
+    .question-section {
+        padding: 15px;
+    }
+
+    .question-content {
+        font-size: 15px;
+    }
+
+    .option-btn {
+        padding: 10px;
+    }
+
+    .option-letter {
+        width: 32px;
+        height: 32px;
+        font-size: 12px;
+        margin-right: 10px;
+    }
+
+    .option-text {
+        font-size: 13px;
+    }
+
+    .game-over-screen {
+        padding: 20px 15px;
+    }
+
+    .game-over-screen h2 {
+        font-size: 20px;
+    }
+
+    .final-score {
+        font-size: 20px;
+    }
+
+    .buttons {
+        gap: 8px;
+    }
+}

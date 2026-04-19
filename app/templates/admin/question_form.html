@@ -352,34 +352,8 @@
 </div>
 
 <script>
-    // Toggle sub-category visibility based on selected mode
-    function toggleSubCategory() {
-        const mode = document.getElementById('mode').value;
-        const subCategoryGroup = document.getElementById('subcategory-group');
-        
-        if (mode === 'real_world') {
-            subCategoryGroup.style.display = 'block';
-        } else {
-            subCategoryGroup.style.display = 'none';
-        }
-    }
-
-    // Preview image before upload
-    function previewImage(input, previewElementId) {
-        if (input.files && input.files[0]) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const previewDiv = document.getElementById(previewElementId);
-                previewDiv.innerHTML = '<img src="' + e.target.result + 
-                                     '" style="max-width: 200px; max-height: 150px; border: 1px solid #ddd; padding: 5px;">';
-            };
-            reader.readAsDataURL(input.files[0]);
-        }
-    }
-
-    // Initialize on page load
-    document.addEventListener('DOMContentLoaded', function() {
-        toggleSubCategory();
-    });
+    // Set API URLs for admin.js
+    window.adminApiUrl = '{{ url_for("admin.index") }}';
 </script>
+<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
 {% endblock %}

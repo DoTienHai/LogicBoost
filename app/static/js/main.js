@@ -1,56 +1,201 @@
-/* Main JavaScript */
+/**
+ * LogicBoost - Main JavaScript
+ * Language switching, initialization, and global utilities
+ */
 
-// Language switching
+/* ═════════════════════════════════════════════════════════════
+   Language Management
+   ═════════════════════════════════════════════════════════════ */
+
+/**
+ * Get the current user's preferred language
+ * Returns 'en' or 'vi', defaults to 'en'
+ */
+function getCurrentLanguage() {
+    return localStorage.getItem('preferredLanguage') || 'en';
+}
+
+/**
+ * Switch application language
+ * Saves preference and reloads content in selected language
+ * @param {string} lang - Language code ('en' or 'vi')
+ */
 function switchLanguage(lang) {
+    if (!['en', 'vi'].includes(lang)) {
+        console.warn(`Invalid language: ${lang}`);
+        return;
+    }
+
     // Save language preference to localStorage
     localStorage.setItem('preferredLanguage', lang);
-    
+
     // Update button styling
     document.querySelectorAll('.lang-btn').forEach(btn => {
         btn.classList.remove('active');
     });
-    document.getElementById(`lang-${lang}`).classList.add('active');
-    
+    const langButton = document.getElementById(`lang-${lang}`);
+    if (langButton) {
+        langButton.classList.add('active');
+    }
+
     // Log for debugging
     console.log(`Language switched to: ${lang}`);
-    
-    // TODO: Fetch and render content in selected language
-    // This will be implemented when you add bilingual content to templates
+
+    // If on a question page, reload content in selected language
+    const questionBody = document.getElementById('question-body');
+    if (questionBody) {
+        reloadQuestionContent(lang);
+    }
 }
 
-// Initialize language on page load
-document.addEventListener('DOMContentLoaded', function() {
-    // Set initial language preference
-    const savedLanguage = localStorage.getItem('preferredLanguage') || 'en';
-    document.getElementById(`lang-${savedLanguage}`).classList.add('active');
+/**
+ * Reload question content in selected language
+ * Fetches content from API and re-renders with Markdown + LaTeX
+ * @param {string} lang - Language code ('en' or 'vi')
+ */
+function reloadQuestionContent(lang) {
+    const questionId = window.currentQuestionId;
+    if (!questionId) {
+        console.warn('Question ID not available for language switch');
+        return;
+    }
+
+    // Determine which API endpoint to use
+    let apiUrl = '';
+    
+    if (window.dailyChallengeSubmitUrl) {
+        // On daily challenge page - would need a separate endpoint
+        apiUrl = `/daily_challenge/question/${questionId}?lang=${lang}`;
+    } else if (window.miniGameApiUrl) {
+        // On mini game page
+        apiUrl = `/mini_game/question/${questionId}?lang=${lang}`;
+    } else if (window.realWorldApiUrl) {
+        // On real-world page
+        apiUrl = `/real_world/scenario/${questionId}?lang=${lang}`;
+    }
+
+    if (!apiUrl) {
+        console.warn('Unable to determine API endpoint for language switch');
+        return;
+    }
+
+    // Fetch content in selected language
+    fetch(apiUrl)
+        .then(res => res.json())
+        .then(data => {
+            // Update question body
+            const questionBody = document.getElementById('question-body');
+            if (questionBody && data.question) {
+                // Step 1: Render Markdown
+                questionBody.innerHTML = marked.parse(data.question);
+
+                // Step 2: Render LaTeX (if KaTeX is loaded)
+                if (typeof renderMathInElement !== 'undefined') {
+                    renderMathInElement(questionBody, {
+                        delimiters: [
+                            { left: '$$', right: '$$', display: true },
+                            { left: '$', right: '$', display: false }
+                        ],
+                        throwOnError: false
+                    });
+                }
+            }
+
+            // Update explanation if visible
+            const explanationBody = document.getElementById('explanation-body');
+            if (explanationBody && data.explanation) {
+                explanationBody.innerHTML = marked.parse(data.explanation);
+                if (typeof renderMathInElement !== 'undefined') {
+                    renderMathInElement(explanationBody, {
+                        delimiters: [
+                            { left: '$$', right: '$$', display: true },
+                            { left: '$', right: '$', display: false }
+                        ],
+                        throwOnError: false
+                    });
+                }
+            }
+
+            console.log(`Question content loaded in ${lang}`);
+        })
+        .catch(err => {
+            console.error('Error reloading question content:', err);
+        });
+}
+
+/* ═════════════════════════════════════════════════════════════
+   Initialization
+   ═════════════════════════════════════════════════════════════ */
+
+/**
+ * Initialize the application on page load
+ */
+document.addEventListener('DOMContentLoaded', function () {
+    // Initialize language preference
+    const currentLang = getCurrentLanguage();
+    const langButton = document.getElementById(`lang-${currentLang}`);
+
+    if (langButton) {
+        langButton.classList.add('active');
+    }
+
+    // Update all language buttons
     document.querySelectorAll('.lang-btn').forEach(btn => {
-        if (!btn.id.includes(savedLanguage)) {
+        const btnLang = btn.id.replace('lang-', '');
+        if (btnLang !== currentLang) {
             btn.classList.remove('active');
         }
     });
-    
-    // Timer for mini game
-    const timerElement = document.getElementById('timer');
-    if (timerElement) {
-        let timeLeft = 60;
-        setInterval(() => {
-            if (timeLeft > 0) {
-                timeLeft--;
-                timerElement.textContent = timeLeft;
-            }
-        }, 1000);
-    }
+
+    // Log initialization
+    console.log(`LogicBoost initialized with language: ${currentLang}`);
 });
 
-function selectAnswer(option) {
-    alert(`You selected: ${option}`);
+/* ═════════════════════════════════════════════════════════════
+   Utility Functions
+   ═════════════════════════════════════════════════════════════ */
+
+/**
+ * Format date to readable string
+ * @param {Date|string} date - Date to format
+ * @returns {string} - Formatted date string
+ */
+function formatDate(date) {
+    const d = new Date(date);
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${month}/${day}/${year}`;
 }
 
-function submitAnswer() {
-    const answer = document.getElementById('user-answer').value;
-    if (!answer) {
-        alert('Please enter an answer');
-        return;
-    }
-    alert(`You answered: ${answer}`);
+/**
+ * Format time in seconds to readable format (MM:SS)
+ * @param {number} seconds - Seconds to format
+ * @returns {string} - Formatted time string
+ */
+function formatTime(seconds) {
+    const minutes = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${minutes}:${String(secs).padStart(2, '0')}`;
+}
+
+/**
+ * Disable a button and show loading state
+ * @param {HTMLElement} button - Button element to disable
+ * @param {string} loadingText - Text to show while loading
+ */
+function disableButtonWithLoading(button, loadingText = 'Loading...') {
+    const originalText = button.textContent;
+    button.disabled = true;
+    button.textContent = loadingText;
+    button.dataset.originalText = originalText;
+}
+
+/**
+ * Re-enable a button and restore original text
+ * @param {HTMLElement} button - Button element to re-enable
+ */
+function enableButton(button) {
+    button.disabled = false;
+    button.textContent = button.dataset.originalText || 'Submit';
 }

@@ -2,6 +2,13 @@
 
 {% block title %}Question - Daily Challenge - LogicBoost{% endblock %}
 
+{% block extra_css %}
+<!-- Daily Challenge Styles -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/daily_challenge.css') }}">
+<!-- KaTeX for LaTeX rendering -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+{% endblock %}
+
 {% block content %}
 <div class="question-container">
     <div class="question-header">
@@ -15,7 +22,7 @@
     {% if question %}
         <div class="question-content">
             <h3>{{ question.title }}</h3>
-            <div class="question-body">
+            <div class="question-body" id="question-body">
                 {{ question.question }}
             </div>
 
@@ -50,45 +57,46 @@
     </div>
 </div>
 
+<!-- Markdown and LaTeX libraries -->
+<script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+
+<!-- Daily Challenge Logic -->
 <script>
-const currentQuestion = {
-    id: {{ question.id }},
-    number: {{ question_number }},
-    total: {{ total_questions }},
-    type: "{{ 'multiple_choice' if question.option_a else 'free_text' }}"
-};
+    // Set API URLs for daily_challenge.js
+    window.dailyChallengeSubmitUrl = '{{ url_for("daily_challenge.submit_answer") }}';
 
-function submitAnswer(answer) {
-    fetch('{{ url_for("daily_challenge.submit_answer") }}', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-            question_id: currentQuestion.id,
-            answer: answer,
-            question_type: currentQuestion.type,
-            question_num: currentQuestion.number,
-        })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.completed) {
-            // All 5 questions answered - go to summary
-            window.location.href = data.next_url;
-        } else {
-            // Move to next question
-            window.location.href = data.next_url;
+    // Initialize current question data
+    const questionData = {
+        id: {{ question.id }},
+        number: {{ question_number }},
+        total: {{ total_questions }},
+        type: "{{ 'multiple_choice' if question.option_a else 'free_text' }}"
+    };
+
+    // Render Markdown + LaTeX
+    document.addEventListener('DOMContentLoaded', () => {
+        const questionBody = document.getElementById('question-body');
+        
+        if (questionBody) {
+            // Step 1: Render Markdown
+            questionBody.innerHTML = marked.parse(questionBody.innerHTML);
+            
+            // Step 2: Render LaTeX
+            renderMathInElement(questionBody, {
+                delimiters: [
+                    { left: '$$', right: '$$', display: true },
+                    { left: '$', right: '$', display: false }
+                ],
+                throwOnError: false
+            });
         }
-    })
-    .catch(err => console.error('Error:', err));
-}
 
-function submitTextAnswer() {
-    const answer = document.getElementById('user-answer').value.trim();
-    if (!answer) {
-        alert('Please type an answer');
-        return;
-    }
-    submitAnswer(answer);
-}
+        // Initialize daily challenge
+        initDailyQuestion(questionData);
+    });
 </script>
+<script src="{{ url_for('static', filename='js/daily_challenge.js') }}"></script>
+
 {% endblock %}
