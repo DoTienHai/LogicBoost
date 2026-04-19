@@ -764,10 +764,45 @@
    FOOTER
    ======================================== */
 
-.import-footer {
     text-align: center;
     margin-top: 40px;
     padding-top: 30px;
+}
+
+/* ========================================
+   TWO COLUMN LAYOUT (EN/VI)
+   ======================================== */
+
+.import-two-column {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 0 auto;
+}
+
+.import-column {
+    display: flex;
+    flex-direction: column;
+}
+
+.import-column.english-column {
+    border-right: 2px solid rgba(0, 0, 0, 0.1);
+    padding-right: 20px;
+}
+
+.import-column.vietnamese-column {
+    padding-left: 20px;
+}
+
+.language-label {
+    font-size: 1.3em;
+    font-weight: 700;
+    color: #0277bd;
+    margin-bottom: 20px;
+    text-align: center;
+    padding: 15px;
+    background: rgba(2, 119, 189, 0.08);
+    border-radius: 8px;
 }
 
 /* ========================================
@@ -819,6 +854,24 @@
     .result-actions .btn {
         width: 100%;
         text-align: center;
+    }
+
+    /* Two column layout on mobile */
+    .import-two-column {
+        grid-template-columns: 1fr;
+        gap: 30px;
+    }
+
+    .import-column.english-column {
+        border-right: none;
+        border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+        padding-right: 0;
+        padding-bottom: 30px;
+    }
+
+    .import-column.vietnamese-column {
+        padding-left: 0;
+        padding-top: 30px;
     }
 }
 
