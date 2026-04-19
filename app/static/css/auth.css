@@ -75,6 +75,7 @@
 }
 
 .alert {
+    display: none;
     padding: 1rem;
     border-radius: var(--radius);
     border-left: 4px solid;
@@ -82,6 +83,11 @@
     word-wrap: break-word;
     white-space: normal;
     margin-bottom: 0.75rem;
+}
+
+/* Show only the most recent alert message */
+.flashes-container .alert:last-child {
+    display: block;
 }
 
 .alert-success {

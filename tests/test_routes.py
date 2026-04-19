@@ -33,8 +33,9 @@ def create_admin_and_login(client, app):
 class TestMainRoutes:
     """Tests for main routes."""
 
-    def test_home_page(self, client):
+    def test_home_page(self, client, app):
         """Test home page loads."""
+        create_admin_and_login(client, app)
         response = client.get("/")
         assert response.status_code == 200
         assert b"LogicBoost" in response.data
@@ -44,8 +45,9 @@ class TestMainRoutes:
 class TestDailyChallengeRoutes:
     """Tests for daily challenge routes."""
 
-    def test_daily_challenge_index(self, client):
+    def test_daily_challenge_index(self, client, app):
         """Test daily challenge lobby."""
+        create_admin_and_login(client, app)
         response = client.get("/daily-challenge/")
         assert response.status_code == 200
         assert b"Daily Challenge" in response.data
@@ -104,8 +106,9 @@ class TestDailyChallengeRoutes:
 class TestMiniGameRoutes:
     """Tests for mini game routes."""
 
-    def test_mini_game_index(self, client):
+    def test_mini_game_index(self, client, app):
         """Test mini game lobby."""
+        create_admin_and_login(client, app)
         response = client.get("/mini-game/")
         assert response.status_code == 200
         assert b"Mini Game" in response.data or b"mini" in response.data.lower()
@@ -126,8 +129,9 @@ class TestMiniGameRoutes:
 class TestRealWorldRoutes:
     """Tests for real-world routes."""
 
-    def test_real_world_index(self, client):
+    def test_real_world_index(self, client, app):
         """Test real-world problems page."""
+        create_admin_and_login(client, app)
         response = client.get("/real-world/")
         assert response.status_code == 200
         assert b"Real-world" in response.data or b"real-world" in response.data.lower()
@@ -423,8 +427,9 @@ class TestAdminRoutes:
 class TestPageNavigation:
     """Tests for page navigation and buttons."""
 
-    def test_home_has_navigation_buttons(self, client):
+    def test_home_has_navigation_buttons(self, client, app):
         """Test home page has navigation buttons."""
+        create_admin_and_login(client, app)
         response = client.get("/")
         assert response.status_code == 200
         assert b"Daily Challenge" in response.data
@@ -485,8 +490,9 @@ class TestPageContent:
         assert response.status_code == 200
         assert b"button" in response.data.lower()
 
-    def test_home_feature_cards_exist(self, client):
+    def test_home_feature_cards_exist(self, client, app):
         """Test home page has feature cards."""
+        create_admin_and_login(client, app)
         response = client.get("/")
         assert response.status_code == 200
         # Each feature should be linked
