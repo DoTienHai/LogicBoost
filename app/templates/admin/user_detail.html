@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}User Detail - {{ user.username }} - LogicBoost Admin{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="admin-container" style="max-width: 700px;">
+    <div class="admin-header" style="margin-bottom: 2rem;">
+        <h1>👤 {{ user.username }}</h1>
+        <div style="display: flex; gap: 0.75rem;">
+            <a href="{{ url_for('admin.edit_user', user_id=user.id) }}" class="btn btn-primary">✏️ Edit</a>
+            <a href="{{ url_for('admin.list_users') }}" class="btn btn-secondary">← Back to Users</a>
+        </div>
+    </div>
+
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flashes-container" style="margin-bottom: 1.5rem;">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- User Info -->
+    <div class="admin-card" style="margin-bottom: 1.5rem;">
+        <h2 style="margin-bottom: 1rem; font-size: 1.1rem;">Account Information</h2>
+        <div class="profile-info">
+            <div class="info-row">
+                <div class="info-label">Username</div>
+                <div class="info-value">{{ user.username }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Email</div>
+                <div class="info-value">{{ user.email }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Full Name</div>
+                <div class="info-value">
+                    {% if user.first_name or user.last_name %}
+                        {{ user.first_name or '' }} {{ user.last_name or '' }}
+                    {% else %}
+                        <em style="color: var(--gray);">Not set</em>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Status</div>
+                <div class="info-value">
+                    {% if user.is_active %}
+                        <span class="badge badge-success">✓ Active</span>
+                    {% else %}
+                        <span class="badge badge-light">Inactive</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Joined</div>
+                <div class="info-value">{{ user.created_at.strftime('%B %d, %Y') if user.created_at else 'N/A' }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Roles -->
+    <div class="admin-card" style="margin-bottom: 1.5rem;">
+        <h2 style="margin-bottom: 1rem; font-size: 1.1rem;">Roles</h2>
+
+        {% if user.roles %}
+            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem;">
+                {% for role in user.roles %}
+                    <span class="role-tag {{ role.name }}">
+                        {% if role.name == 'admin' %}🔴{% elif role.name == 'content_creator' %}🔵{% else %}🟢{% endif %}
+                        {{ role.display_name }}
+                    </span>
+                    <form method="POST" action="{{ url_for('admin.remove_role', user_id=user.id, role_id=role.id) }}" style="display: inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-sm btn-danger" title="Remove role" style="padding: 0.15rem 0.5rem; font-size: 0.75rem;">×</button>
+                    </form>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p style="color: var(--gray); margin-bottom: 1.5rem;">No roles assigned.</p>
+        {% endif %}
+
+        <!-- Assign Role -->
+        <form method="POST" action="{{ url_for('admin.assign_role', user_id=user.id) }}" style="display: flex; gap: 0.75rem; align-items: flex-end;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                <label for="role_id">Assign Role</label>
+                <select name="role_id" id="role_id" class="filter-select" required>
+                    <option value="">— Select role —</option>
+                    {% for role in roles %}
+                        {% if role not in user.roles %}
+                            <option value="{{ role.id }}">{{ role.display_name }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary" style="white-space: nowrap;">➕ Assign</button>
+        </form>
+    </div>
+
+    <!-- Danger Zone -->
+    {% if current_user.has_permission('delete_users') %}
+    <div class="admin-card" style="border: 1px solid #e74c3c;">
+        <h2 style="margin-bottom: 0.75rem; font-size: 1.1rem; color: #e74c3c;">⚠️ Danger Zone</h2>
+        <p style="color: var(--gray); margin-bottom: 1rem;">This will permanently delete the user and all their data.</p>
+        <form method="POST" action="{{ url_for('admin.delete_user', user_id=user.id) }}"
+              onsubmit="return confirm('Delete user {{ user.username }}? This cannot be undone.');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-danger">🗑️ Delete User</button>
+        </form>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

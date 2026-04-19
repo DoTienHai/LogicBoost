@@ -1,7 +1,17 @@
 """Tests for Mini Game Service."""
 import pytest
 from app.services import mini_game_service
-from app.models import Question, UserAnswer
+from app.models import Question, UserAnswer, db
+from app.models.user import User
+
+
+def make_user(db_session_or_app, username="mini_test_user", email="mini@example.com"):
+    """Helper: create and commit a User, return id."""
+    user = User(username=username, email=email)
+    user.set_password("password123")
+    db_session_or_app.add(user)
+    db_session_or_app.commit()
+    return user.id
 
 
 class TestMiniGameService:
@@ -84,6 +94,7 @@ class TestMiniGameService:
     def test_check_answer_correct_multiple_choice(self, app, sample_mini_game_questions):
         """Test check_answer with correct multiple choice answer."""
         with app.app_context():
+            user_id = make_user(db.session)
             question = Question.query.filter(
                 Question.mode == "mini_game",
                 Question.option_a.isnot(None)
@@ -92,7 +103,8 @@ class TestMiniGameService:
             result = mini_game_service.check_answer(
                 question.id,
                 question.answer,
-                time_taken=10
+                time_taken=10,
+                user_id=user_id,
             )
             
             assert result["is_correct"] is True
@@ -101,7 +113,7 @@ class TestMiniGameService:
             
             # Check that answer was recorded
             answer_record = UserAnswer.query.filter_by(
-                question_id=question.id
+                question_id=question.id, user_id=user_id
             ).first()
             
             assert answer_record is not None
@@ -111,6 +123,7 @@ class TestMiniGameService:
     def test_check_answer_incorrect_multiple_choice(self, app, sample_mini_game_questions):
         """Test check_answer with incorrect multiple choice answer."""
         with app.app_context():
+            user_id = make_user(db.session, "user_wrong", "wrong@example.com")
             question = Question.query.filter(
                 Question.mode == "mini_game",
                 Question.option_a.isnot(None)
@@ -122,7 +135,8 @@ class TestMiniGameService:
             result = mini_game_service.check_answer(
                 question.id,
                 wrong_answer,
-                time_taken=15
+                time_taken=15,
+                user_id=user_id,
             )
             
             assert result["is_correct"] is False
@@ -131,7 +145,7 @@ class TestMiniGameService:
             
             # Check that answer was recorded
             answer_record = UserAnswer.query.filter_by(
-                question_id=question.id
+                question_id=question.id, user_id=user_id
             ).first()
             
             assert answer_record is not None
@@ -140,6 +154,7 @@ class TestMiniGameService:
     def test_check_answer_correct_free_text(self, app, sample_mini_game_questions):
         """Test check_answer with correct free text answer."""
         with app.app_context():
+            user_id = make_user(db.session, "user_free", "free@example.com")
             question = Question.query.filter(
                 Question.mode == "mini_game",
                 Question.option_a.is_(None)
@@ -148,7 +163,8 @@ class TestMiniGameService:
             result = mini_game_service.check_answer(
                 question.id,
                 question.answer,
-                time_taken=20
+                time_taken=20,
+                user_id=user_id,
             )
             
             assert result["is_correct"] is True
@@ -156,7 +172,7 @@ class TestMiniGameService:
             
             # Check that answer was recorded
             answer_record = UserAnswer.query.filter_by(
-                question_id=question.id
+                question_id=question.id, user_id=user_id
             ).first()
             
             assert answer_record is not None
@@ -173,7 +189,7 @@ class TestMiniGameService:
             result = mini_game_service.check_answer(
                 question.id,
                 answer_upper,
-                time_taken=5
+                time_taken=5,
             )
             
             assert result["is_correct"] is True
@@ -208,7 +224,7 @@ class TestMiniGameService:
                 result = mini_game_service.check_answer(
                     question.id,
                     user_answer,
-                    time_taken=10
+                    time_taken=10,
                 )
                 
                 assert result["is_correct"] is should_be_correct, \

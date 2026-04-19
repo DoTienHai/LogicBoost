@@ -1,6 +1,33 @@
 """Integration tests for all routes."""
 import pytest
 from app.models import Question, db
+from app.models.user import User
+from app.models.role import Role
+
+
+def create_admin_and_login(client, app):
+    """Helper: create an admin user, assign admin role, and log in."""
+    with app.app_context():
+        # Ensure admin role exists
+        role = Role.query.filter_by(name="admin").first()
+        if not role:
+            role = Role(name="admin", display_name="Administrator")
+            db.session.add(role)
+            db.session.commit()
+
+        user = User.query.filter_by(username="admin_test").first()
+        if not user:
+            user = User(username="admin_test", email="admin_test@example.com")
+            user.set_password("admin123")
+            user.roles.append(role)
+            db.session.add(user)
+            db.session.commit()
+
+    client.post(
+        "/auth/login",
+        data={"username": "admin_test", "password": "admin123"},
+        follow_redirects=True,
+    )
 
 
 class TestMainRoutes:
@@ -124,20 +151,23 @@ class TestRealWorldRoutes:
 class TestAdminRoutes:
     """Tests for admin routes."""
 
-    def test_admin_dashboard(self, client):
+    def test_admin_dashboard(self, client, app):
         """Test admin dashboard."""
+        create_admin_and_login(client, app)
         response = client.get("/admin/")
         assert response.status_code == 200
         assert b"Admin" in response.data
 
-    def test_admin_add_question_get(self, client):
+    def test_admin_add_question_get(self, client, app):
         """Test add question form page (GET)."""
+        create_admin_and_login(client, app)
         response = client.get("/admin/question/new")
         assert response.status_code == 200
         assert b"Question" in response.data or b"question" in response.data.lower()
 
     def test_admin_add_question_post_valid(self, client, app):
         """Test adding a question with valid data (POST)."""
+        create_admin_and_login(client, app)
         from app.models import Question
         
         form_data = {
@@ -165,8 +195,9 @@ class TestAdminRoutes:
             assert question.answer == "a"
             assert question.mode == "daily_challenge"
 
-    def test_admin_add_question_post_missing_title(self, client):
+    def test_admin_add_question_post_missing_title(self, client, app):
         """Test adding question with missing title (validation)."""
+        create_admin_and_login(client, app)
         form_data = {
             "question": "What is 2+2?",
             "explanation": "The answer is 4",
@@ -180,8 +211,9 @@ class TestAdminRoutes:
         assert response.status_code == 400
         assert b"Title" in response.data or b"required" in response.data
 
-    def test_admin_add_question_post_missing_mode(self, client):
+    def test_admin_add_question_post_missing_mode(self, client, app):
         """Test adding question with missing mode (validation)."""
+        create_admin_and_login(client, app)
         form_data = {
             "title": "Test Question",
             "question": "What is 2+2?",
@@ -195,8 +227,9 @@ class TestAdminRoutes:
         assert response.status_code == 400
         assert b"Mode" in response.data or b"required" in response.data
 
-    def test_admin_add_question_post_invalid_mode(self, client):
+    def test_admin_add_question_post_invalid_mode(self, client, app):
         """Test adding question with invalid mode (validation)."""
+        create_admin_and_login(client, app)
         form_data = {
             "title": "Test Question",
             "question": "What is 2+2?",
@@ -211,8 +244,9 @@ class TestAdminRoutes:
         assert response.status_code == 400
         assert b"Invalid mode" in response.data or b"mode" in response.data.lower()
 
-    def test_admin_add_question_post_invalid_difficulty(self, client):
+    def test_admin_add_question_post_invalid_difficulty(self, client, app):
         """Test adding question with invalid difficulty (validation)."""
+        create_admin_and_login(client, app)
         form_data = {
             "title": "Test Question",
             "question": "What is 2+2?",
@@ -228,14 +262,16 @@ class TestAdminRoutes:
         assert response.status_code == 400
         assert b"Difficulty" in response.data or b"1-5" in response.data
 
-    def test_admin_import_page(self, client):
+    def test_admin_import_page(self, client, app):
         """Test import page."""
+        create_admin_and_login(client, app)
         response = client.get("/admin/import")
         assert response.status_code == 200
         assert b"Import" in response.data
 
     def test_admin_edit_question_get(self, client, app):
         """Test edit question form page (GET)."""
+        create_admin_and_login(client, app)
         from app.models import Question
         
         # Create a question in the database
@@ -261,6 +297,7 @@ class TestAdminRoutes:
 
     def test_admin_edit_question_post_valid(self, client, app):
         """Test editing a question with valid data (POST)."""
+        create_admin_and_login(client, app)
         from app.models import Question, db
         
         # Create a question
@@ -298,7 +335,7 @@ class TestAdminRoutes:
         
         # Verify question was updated
         with app.app_context():
-            updated_q = Question.query.get(question_id)
+            updated_q = db.session.get(Question, question_id)
             assert updated_q.title == "Updated Question"
             assert updated_q.question == "What is 3+3?"
             assert updated_q.answer == "b"
@@ -306,6 +343,7 @@ class TestAdminRoutes:
 
     def test_admin_edit_question_post_invalid(self, client, app):
         """Test editing question with invalid data (validation)."""
+        create_admin_and_login(client, app)
         from app.models import Question, db
         
         # Create a question
@@ -340,6 +378,7 @@ class TestAdminRoutes:
 
     def test_admin_delete_question(self, client, app):
         """Test deleting a question."""
+        create_admin_and_login(client, app)
         from app.models import Question, db
         
         # Create a question
@@ -360,7 +399,7 @@ class TestAdminRoutes:
         
         # Verify question exists
         with app.app_context():
-            assert Question.query.get(question_id) is not None
+            assert db.session.get(Question, question_id) is not None
         
         # Delete the question
         response = client.post(f"/admin/question/{question_id}/delete", follow_redirects=False)
@@ -370,10 +409,11 @@ class TestAdminRoutes:
         
         # Verify question was deleted
         with app.app_context():
-            assert Question.query.get(question_id) is None
+            assert db.session.get(Question, question_id) is None
 
-    def test_admin_delete_nonexistent_question(self, client):
+    def test_admin_delete_nonexistent_question(self, client, app):
         """Test deleting a non-existent question."""
+        create_admin_and_login(client, app)
         response = client.post("/admin/question/9999/delete", follow_redirects=False)
         
         # Should return 404
@@ -391,8 +431,9 @@ class TestPageNavigation:
         assert b"Mini Game" in response.data
         assert b"Real-world" in response.data
 
-    def test_navbar_visible_on_all_pages(self, client):
+    def test_navbar_visible_on_all_pages(self, client, app):
         """Test navbar is visible on all pages."""
+        create_admin_and_login(client, app)
         pages = [
             "/",
             "/daily-challenge/",
@@ -405,8 +446,9 @@ class TestPageNavigation:
             assert response.status_code == 200
             assert b"LogicBoost" in response.data  # Navbar has LogicBoost brand
 
-    def test_back_navigation_buttons(self, client):
+    def test_back_navigation_buttons(self, client, app):
         """Test back navigation buttons exist."""
+        create_admin_and_login(client, app)
         # Daily challenge has back button
         response = client.get("/daily-challenge/")
         assert response.status_code == 200
@@ -421,8 +463,9 @@ class TestPageNavigation:
 class TestPageContent:
     """Tests for page content."""
 
-    def test_pages_contain_placeholder_text(self, client):
+    def test_pages_contain_placeholder_text(self, client, app):
         """Test pages contain placeholder content."""
+        create_admin_and_login(client, app)
         pages = {
             "/daily-challenge/": b"Daily Challenge",
             "/mini-game/": b"mini",
@@ -435,8 +478,9 @@ class TestPageContent:
             assert response.status_code == 200
             assert expected_text.lower() in response.data.lower()
 
-    def test_forms_have_buttons(self, client):
+    def test_forms_have_buttons(self, client, app):
         """Test forms have submit buttons."""
+        create_admin_and_login(client, app)
         response = client.get("/admin/question/new")
         assert response.status_code == 200
         assert b"button" in response.data.lower()

@@ -47,6 +47,7 @@ class TestingConfig(Config):
     
     DEBUG = True
     TESTING = True
+    WTF_CSRF_ENABLED = False  # Disable CSRF for tests
     # In-memory SQLite: exists only during test run
     # Auto-cleanup: database deleted when test finishes
     # Speed: fast execution (no disk I/O)

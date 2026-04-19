@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}LogicBoost{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
     {% block extra_css %}{% endblock %}
 </head>
 <body>
@@ -20,11 +21,25 @@
                         <li><a href="{{ url_for('daily_challenge.index') }}">📅 Daily Challenge</a></li>
                         <li><a href="{{ url_for('mini_game.index') }}">⚡ Mini Game</a></li>
                         <li><a href="{{ url_for('real_world.index') }}">🌍 Real-world</a></li>
-                        <li><a href="{{ url_for('admin.index') }}">⚙️ Admin</a></li>
+                        {% if current_user.is_authenticated and current_user.has_permission('view_questions') %}
+                            <li><a href="{{ url_for('admin.index') }}">⚙️ Admin</a></li>
+                        {% endif %}
                     </ul>
-                    <div class="language-switcher">
-                        <button id="lang-en" class="lang-btn active" onclick="switchLanguage('en')">EN</button>
-                        <button id="lang-vi" class="lang-btn" onclick="switchLanguage('vi')">VI</button>
+                    <div class="navbar-right" style="display: flex; align-items: center; gap: 1.5rem;">
+                        <div class="language-switcher">
+                            <button id="lang-en" class="lang-btn active" onclick="switchLanguage('en')">EN</button>
+                            <button id="lang-vi" class="lang-btn" onclick="switchLanguage('vi')">VI</button>
+                        </div>
+                        <div class="auth-links" style="display: flex; gap: 1rem;">
+                            {% if current_user.is_authenticated %}
+                                <span style="color: var(--dark); font-size: 0.9rem;">👤 {{ current_user.username }}</span>
+                                <a href="{{ url_for('auth.profile') }}" class="btn btn-sm btn-secondary">Profile</a>
+                                <a href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-secondary">Logout</a>
+                            {% else %}
+                                <a href="{{ url_for('auth.login') }}" class="btn btn-sm btn-primary">Login</a>
+                                <a href="{{ url_for('auth.register') }}" class="btn btn-sm btn-secondary">Sign Up</a>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
             </nav>

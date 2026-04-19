@@ -1,6 +1,16 @@
 """Unit tests for database models."""
 import pytest
 from app.models import db, Question, UserAnswer, Stats
+from app.models.user import User
+
+
+def make_user(db_session, username="testuser", email="test@example.com"):
+    """Helper: create and commit a minimal User."""
+    user = User(username=username, email=email)
+    user.set_password("password123")
+    db_session.add(user)
+    db_session.commit()
+    return user
 
 
 class TestQuestion:
@@ -105,6 +115,7 @@ class TestUserAnswer:
 
     def test_create_user_answer(self, db_session):
         """Test creating a user answer."""
+        user = make_user(db_session)
         # Create question first
         question = Question(
             title="Test Q",
@@ -118,8 +129,10 @@ class TestUserAnswer:
 
         # Create user answer
         answer = UserAnswer(
+            user_id=user.id,
             question_id=question.id,
             question_type="multiple_choice",
+            mode="daily_challenge",
             chosen="b",
             is_correct=True,
             time_taken=15,
@@ -133,6 +146,7 @@ class TestUserAnswer:
 
     def test_user_answer_relationship(self, db_session):
         """Test UserAnswer relationship with Question."""
+        user = make_user(db_session, username="user2", email="user2@example.com")
         question = Question(
             title="Test",
             question="Q?",
@@ -144,8 +158,10 @@ class TestUserAnswer:
         db_session.commit()
 
         answer = UserAnswer(
+            user_id=user.id,
             question_id=question.id,
             question_type="free_text",
+            mode="daily_challenge",
             chosen="my answer",
             is_correct=False,
         )
@@ -153,12 +169,13 @@ class TestUserAnswer:
         db_session.commit()
 
         # Verify relationship
-        retrieved_question = Question.query.get(question.id)
-        assert len(retrieved_question.answers) == 1
-        assert retrieved_question.answers[0].chosen == "my answer"
+        retrieved_question = db_session.get(Question, question.id)
+        assert len(retrieved_question.user_answers) == 1
+        assert retrieved_question.user_answers[0].chosen == "my answer"
 
     def test_user_answer_to_dict(self, db_session):
         """Test converting user answer to dict."""
+        user = make_user(db_session, username="user3", email="user3@example.com")
         question = Question(
             title="Test",
             question="Q?",
@@ -170,8 +187,10 @@ class TestUserAnswer:
         db_session.commit()
 
         answer = UserAnswer(
+            user_id=user.id,
             question_id=question.id,
             question_type="multiple_choice",
+            mode="daily_challenge",
             chosen="a",
             is_correct=True,
             time_taken=10,
@@ -190,7 +209,8 @@ class TestStats:
 
     def test_create_stats(self, db_session):
         """Test creating stats entry."""
-        stats = Stats(mode="daily_challenge", correct=10, incorrect=2)
+        user = make_user(db_session, username="statsuser1", email="stats1@example.com")
+        stats = Stats(user_id=user.id, mode="daily_challenge", correct=10, incorrect=2)
         db_session.add(stats)
         db_session.commit()
 
@@ -200,7 +220,8 @@ class TestStats:
 
     def test_stats_to_dict(self, db_session):
         """Test converting stats to dict."""
-        stats = Stats(mode="mini_game", correct=15, incorrect=5)
+        user = make_user(db_session, username="statsuser2", email="stats2@example.com")
+        stats = Stats(user_id=user.id, mode="mini_game", correct=15, incorrect=5)
         db_session.add(stats)
         db_session.commit()
 
@@ -211,21 +232,23 @@ class TestStats:
 
     def test_stats_accuracy_calculation(self, db_session):
         """Test accuracy calculation in stats."""
+        user = make_user(db_session, username="statsuser3", email="stats3@example.com")
         # Perfect score
-        stats1 = Stats(mode="daily_challenge", correct=10, incorrect=0)
+        stats1 = Stats(user_id=user.id, mode="daily_challenge", correct=10, incorrect=0)
         db_session.add(stats1)
         db_session.commit()
         assert stats1.to_dict()["accuracy"] == 100.0
 
         # Half correct
-        stats2 = Stats(mode="real_world", correct=5, incorrect=5)
+        stats2 = Stats(user_id=user.id, mode="real_world", correct=5, incorrect=5)
         db_session.add(stats2)
         db_session.commit()
         assert stats2.to_dict()["accuracy"] == 50.0
 
     def test_stats_empty_accuracy(self, db_session):
         """Test accuracy when no answers yet."""
-        stats = Stats(mode="mini_game", correct=0, incorrect=0)
+        user = make_user(db_session, username="statsuser4", email="stats4@example.com")
+        stats = Stats(user_id=user.id, mode="mini_game", correct=0, incorrect=0)
         db_session.add(stats)
         db_session.commit()
 

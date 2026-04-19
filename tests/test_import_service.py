@@ -5,6 +5,30 @@ import os
 import tempfile
 from app.services.import_service import import_from_excel
 from app.models import Question, db
+from app.models.user import User
+from app.models.role import Role
+
+
+def create_admin_and_login(client, app):
+    """Helper: create admin user and log in."""
+    with app.app_context():
+        role = Role.query.filter_by(name="admin").first()
+        if not role:
+            role = Role(name="admin", display_name="Administrator")
+            db.session.add(role)
+            db.session.commit()
+        user = User.query.filter_by(username="admin_test").first()
+        if not user:
+            user = User(username="admin_test", email="admin_test@example.com")
+            user.set_password("admin123")
+            user.roles.append(role)
+            db.session.add(user)
+            db.session.commit()
+    client.post(
+        "/auth/login",
+        data={"username": "admin_test", "password": "admin123"},
+        follow_redirects=True,
+    )
 
 
 @pytest.fixture
@@ -166,25 +190,29 @@ class TestImportService:
 class TestImportRoutes:
     """Test admin import routes."""
     
-    def test_import_page_get(self, client):
+    def test_import_page_get(self, client, app):
         """Test import page GET."""
+        create_admin_and_login(client, app)
         response = client.get("/admin/import")
         assert response.status_code == 200
     
-    def test_import_template(self, client):
+    def test_import_template(self, client, app):
         """Test template endpoint - should return Excel file."""
+        create_admin_and_login(client, app)
         response = client.get("/admin/import/template")
         assert response.status_code == 200
         # Check that response is Excel file
         assert "spreadsheetml" in response.content_type or "octet-stream" in response.content_type
     
-    def test_import_no_file(self, client):
+    def test_import_no_file(self, client, app):
         """Test import without file."""
+        create_admin_and_login(client, app)
         response = client.post("/admin/import")
         assert response.status_code == 200
     
-    def test_import_wrong_type(self, client):
+    def test_import_wrong_type(self, client, app):
         """Test import with wrong file type."""
+        create_admin_and_login(client, app)
         from io import BytesIO
         data = {'file': (BytesIO(b"test"), "test.txt")}
         response = client.post("/admin/import", data=data, content_type='multipart/form-data')

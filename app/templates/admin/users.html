@@ -1,0 +1,321 @@
+{% extends "base.html" %}
+
+{% block title %}User Management - LogicBoost Admin{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="admin-container" style="max-width: 1000px;">
+    <div class="admin-header">
+        <h1>👥 User Management</h1>
+        <a href="{{ url_for('admin.user_form') }}" class="btn btn-primary">➕ Create User</a>
+    </div>
+
+    <!-- Flash messages -->
+    {% if session.get('_flashes') %}
+        <div class="flashes-container" style="margin-bottom: 2rem;">
+            {% for category, message in session.get('_flashes', []) %}
+                <div class="alert alert-{{ category }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- Search & Filter -->
+    <div class="search-bar">
+        <div class="search-input">
+            <input
+                type="text"
+                id="search-input"
+                placeholder="🔍 Search users by name, username, or email..."
+                autocomplete="off"
+            >
+        </div>
+        <div class="filter-group">
+            <select id="role-filter" class="filter-select">
+                <option value="">All Roles</option>
+                <option value="admin">Admin</option>
+                <option value="content_creator">Content Creator</option>
+                <option value="user">User</option>
+            </select>
+            <select id="status-filter" class="filter-select">
+                <option value="">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="table-container">
+        {% if users %}
+            <table id="users-table">
+                <thead>
+                    <tr>
+                        <th>
+                            <input type="checkbox" id="select-all" aria-label="Select all users">
+                        </th>
+                        <th onclick="sortTable('username')">Username 🔄</th>
+                        <th onclick="sortTable('email')">Email 🔄</th>
+                        <th onclick="sortTable('name')">Name 🔄</th>
+                        <th>Roles</th>
+                        <th>Status</th>
+                        <th>Joined</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="users-tbody">
+                    {% for user in users %}
+                        <tr data-user-id="{{ user.id }}">
+                            <td><input type="checkbox" class="user-checkbox" value="{{ user.id }}"></td>
+                            <td class="username" onclick="editUser({{ user.id }})"><strong>{{ user.username }}</strong></td>
+                            <td>{{ user.email }}</td>
+                            <td>{{ user.first_name or '' }} {{ user.last_name or '' }}</td>
+                            <td>
+                                {% if user.roles %}
+                                    {% for role in user.roles %}
+                                        <span class="role-tag {{ role.name }}">
+                                            {% if role.name == 'admin' %}🔴{% elif role.name == 'content_creator' %}🔵{% else %}🟢{% endif %}
+                                            {{ role.display_name }}
+                                        </span>
+                                    {% endfor %}
+                                {% else %}
+                                    <span class="badge badge-light">No roles</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if user.is_active %}
+                                    <span class="badge badge-success">✓ Active</span>
+                                {% else %}
+                                    <span class="badge badge-light">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ user.created_at.strftime('%b %d, %Y') if user.created_at else '-' }}</td>
+                            <td>
+                                <a href="{{ url_for('admin.user_form', user_id=user.id) }}" class="btn btn-sm btn-secondary">✏️</a>
+                                <button class="btn btn-sm btn-danger" onclick="deleteUser({{ user.id }}, '{{ user.username }}')">🗑️</button>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon">👥</div>
+                <div class="empty-state-text">
+                    <h3>No users found</h3>
+                    <p>Create your first user to get started</p>
+                </div>
+                <a href="{{ url_for('admin.user_form') }}" class="btn btn-primary">➕ Create User</a>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Bulk Actions -->
+    {% if users %}
+        <div style="margin-top: 2rem; display: flex; gap: 1rem; align-items: center;">
+            <button id="bulk-delete-btn" class="btn btn-danger" style="display: none;">
+                🗑️ Delete Selected
+            </button>
+            <span id="selected-count" style="color: var(--muted);"></span>
+        </div>
+    {% endif %}
+
+    <!-- Pagination (if needed) -->
+    <div class="pagination" id="pagination"></div>
+</div>
+
+<!-- Toast container -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal-overlay" id="delete-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <h2>Delete User</h2>
+            <button class="modal-close" id="delete-modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p>Are you sure you want to delete user <strong id="delete-username"></strong>?</p>
+            <p style="color: var(--danger); font-weight: 600;">This action cannot be undone.</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="delete-cancel">Cancel</button>
+            <form id="delete-form" method="POST" style="display: contents;">
+                <button type="submit" class="btn btn-danger">Delete User</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+<script>
+let currentDeleteUserId = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('search-input');
+    const roleFilter = document.getElementById('role-filter');
+    const statusFilter = document.getElementById('status-filter');
+    const selectAllCheckbox = document.getElementById('select-all');
+    const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
+    const deleteModal = document.getElementById('delete-modal');
+    const deleteModalClose = document.getElementById('delete-modal-close');
+    const deleteCancel = document.getElementById('delete-cancel');
+    const deleteForm = document.getElementById('delete-form');
+    const userCheckboxes = document.querySelectorAll('.user-checkbox');
+
+    // Search and filter
+    if (searchInput) {
+        searchInput.addEventListener('input', filterTable);
+    }
+    if (roleFilter) {
+        roleFilter.addEventListener('change', filterTable);
+    }
+    if (statusFilter) {
+        statusFilter.addEventListener('change', filterTable);
+    }
+
+    // Select all checkbox
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            userCheckboxes.forEach(cb => cb.checked = this.checked);
+            updateBulkDeleteBtn();
+        });
+    }
+
+    // Individual checkboxes
+    userCheckboxes.forEach(cb => {
+        cb.addEventListener('change', updateBulkDeleteBtn);
+    });
+
+    // Modal close handlers
+    deleteModalClose.addEventListener('click', () => {
+        deleteModal.classList.remove('show');
+        currentDeleteUserId = null;
+    });
+
+    deleteCancel.addEventListener('click', () => {
+        deleteModal.classList.remove('show');
+        currentDeleteUserId = null;
+    });
+
+    deleteModal.addEventListener('click', (e) => {
+        if (e.target === deleteModal) {
+            deleteModal.classList.remove('show');
+            currentDeleteUserId = null;
+        }
+    });
+
+    deleteForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        if (currentDeleteUserId) {
+            fetch(`/admin/users/${currentDeleteUserId}/delete`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            }).then(response => {
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    showToast('Failed to delete user', 'error');
+                }
+            }).catch(err => {
+                showToast('Error deleting user: ' + err.message, 'error');
+            });
+        }
+    });
+
+    // Bulk delete
+    if (bulkDeleteBtn) {
+        bulkDeleteBtn.addEventListener('click', () => {
+            const selectedCheckboxes = document.querySelectorAll('.user-checkbox:checked');
+            if (selectedCheckboxes.length === 0) {
+                showToast('Please select users to delete', 'warning');
+                return;
+            }
+            showToast('Bulk delete not yet implemented', 'info');
+        });
+    }
+
+    function filterTable() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const roleValue = roleFilter.value;
+        const statusValue = statusFilter.value;
+        const rows = document.querySelectorAll('#users-tbody tr');
+
+        rows.forEach(row => {
+            const username = row.querySelector('.username').textContent.toLowerCase();
+            const email = row.cells[2].textContent.toLowerCase();
+            const name = row.cells[3].textContent.toLowerCase();
+            const roleText = row.cells[4].textContent.toLowerCase();
+            const statusText = row.cells[5].textContent.toLowerCase();
+
+            let matches = true;
+
+            // Search filter
+            if (searchTerm) {
+                matches = username.includes(searchTerm) || email.includes(searchTerm) || name.includes(searchTerm);
+            }
+
+            // Role filter
+            if (matches && roleValue) {
+                matches = roleText.includes(roleValue);
+            }
+
+            // Status filter
+            if (matches && statusValue) {
+                if (statusValue === 'active') {
+                    matches = statusText.includes('active');
+                } else {
+                    matches = statusText.includes('inactive');
+                }
+            }
+
+            row.style.display = matches ? '' : 'none';
+        });
+    }
+
+    function updateBulkDeleteBtn() {
+        const selectedCount = document.querySelectorAll('.user-checkbox:checked').length;
+        if (selectedCount > 0) {
+            bulkDeleteBtn.style.display = 'inline-flex';
+            document.getElementById('selected-count').textContent = `${selectedCount} user(s) selected`;
+        } else {
+            bulkDeleteBtn.style.display = 'none';
+            document.getElementById('selected-count').textContent = '';
+        }
+    }
+});
+
+function editUser(userId) {
+    window.location.href = `/admin/users/${userId}/edit`;
+}
+
+function deleteUser(userId, username) {
+    currentDeleteUserId = userId;
+    document.getElementById('delete-username').textContent = username;
+    document.getElementById('delete-modal').classList.add('show');
+}
+
+function sortTable(column) {
+    showToast('Sorting not yet implemented', 'info');
+}
+
+function showToast(message, type = 'info') {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    container.appendChild(toast);
+    setTimeout(() => toast.remove(), 4000);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,429 @@
+{% extends "base.html" %}
+
+{% block title %}User Profile - LogicBoost{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div class="admin-header" style="margin-bottom: 2rem;">
+        <h1>My Profile</h1>
+        <button id="logout-btn" class="btn btn-secondary">🚪 Logout</button>
+    </div>
+
+    <!-- Flash messages -->
+    {% if session.get('_flashes') %}
+        <div class="flashes-container" style="margin-bottom: 2rem;">
+            {% for category, message in session.get('_flashes', []) %}
+                <div class="alert alert-{{ category }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- Account Information Section -->
+    <div class="profile-section">
+        <div class="profile-section-header">
+            <h2>👤 Account Information</h2>
+        </div>
+        <div class="profile-info">
+            <div class="info-row">
+                <div class="info-label">Username</div>
+                <div class="info-value">{{ user.username }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Email</div>
+                <div class="info-value">{{ user.email }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Joined</div>
+                <div class="info-value">{{ user.created_at.strftime('%B %d, %Y') if user.created_at else 'N/A' }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Status</div>
+                <div class="info-value">
+                    {% if user.is_active %}
+                        <span class="badge badge-success">✓ Active</span>
+                    {% else %}
+                        <span class="badge badge-light">Inactive</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% if user.roles %}
+                <div class="info-row">
+                    <div class="info-label">Roles</div>
+                    <div class="info-value">
+                        {% for role in user.roles %}
+                            <span class="role-tag {{ role.name }}">
+                                {% if role.name == 'admin' %}🔴{% elif role.name == 'content_creator' %}🔵{% else %}🟢{% endif %}
+                                {{ role.display_name }}
+                            </span>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Edit Profile Section -->
+    <div class="profile-section">
+        <div class="profile-section-header">
+            <h2>✏️ Edit Profile</h2>
+        </div>
+
+        <form id="profile-form" method="POST" action="{{ url_for('auth.profile') }}" novalidate>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="form-group">
+                <label for="first-name">First Name</label>
+                <input
+                    type="text"
+                    id="first-name"
+                    name="first_name"
+                    placeholder="Your first name"
+                    value="{{ user.first_name or '' }}"
+                    autocomplete="given-name"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="last-name">Last Name</label>
+                <input
+                    type="text"
+                    id="last-name"
+                    name="last_name"
+                    placeholder="Your last name"
+                    value="{{ user.last_name or '' }}"
+                    autocomplete="family-name"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    placeholder="your.email@example.com"
+                    value="{{ user.email or '' }}"
+                    autocomplete="email"
+                    required
+                >
+                <div class="form-error" id="email-error"></div>
+            </div>
+
+            <div class="button-group">
+                <button type="submit" class="btn btn-primary">
+                    <span class="button-text">💾 Save Changes</span>
+                    <span class="spinner" id="profile-spinner" style="display: none;"></span>
+                </button>
+                <button type="reset" class="btn btn-secondary">↻ Reset</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Change Password Section -->
+    <div class="profile-section">
+        <div class="profile-section-header collapsible" id="password-section-header">
+            <h2>🔐 Change Password</h2>
+        </div>
+
+        <div class="collapsible-content" style="padding-top: 1.5rem;">
+            <form id="password-form" method="POST" action="{{ url_for('auth.change_password') }}" novalidate>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="form-group required">
+                    <label for="current-password">Current Password</label>
+                    <div class="input-group">
+                        <input
+                            type="password"
+                            id="current-password"
+                            name="current_password"
+                            placeholder="Enter your current password"
+                            required
+                            autocomplete="current-password"
+                        >
+                        <div class="input-group-append">
+                            <button
+                                type="button"
+                                class="btn-toggle-password-pwd"
+                                data-target="current-password"
+                                aria-label="Show/hide password"
+                            >
+                                👁️
+                            </button>
+                        </div>
+                    </div>
+                    <div class="form-error" id="current-password-error"></div>
+                </div>
+
+                <div class="form-group required">
+                    <label for="new-password">New Password</label>
+                    <div class="input-group">
+                        <input
+                            type="password"
+                            id="new-password"
+                            name="new_password"
+                            placeholder="Enter a new password"
+                            required
+                            minlength="6"
+                            autocomplete="new-password"
+                        >
+                        <div class="input-group-append">
+                            <button
+                                type="button"
+                                class="btn-toggle-password-pwd"
+                                data-target="new-password"
+                                aria-label="Show/hide password"
+                            >
+                                👁️
+                            </button>
+                        </div>
+                    </div>
+                    <div class="password-strength" style="margin-top: 0.5rem;">
+                        <div class="strength-meter">
+                            <div class="strength-meter-fill" id="new-strength-meter"></div>
+                        </div>
+                        <div class="strength-text" id="new-strength-text"></div>
+                    </div>
+                    <div class="form-error" id="new-password-error"></div>
+                </div>
+
+                <div class="form-group required">
+                    <label for="confirm-new-password">Confirm New Password</label>
+                    <div class="input-group">
+                        <input
+                            type="password"
+                            id="confirm-new-password"
+                            name="confirm_new_password"
+                            placeholder="Confirm your new password"
+                            required
+                            autocomplete="new-password"
+                        >
+                        <div class="input-group-append">
+                            <button
+                                type="button"
+                                class="btn-toggle-password-pwd"
+                                data-target="confirm-new-password"
+                                aria-label="Show/hide password"
+                            >
+                                👁️
+                            </button>
+                        </div>
+                    </div>
+                    <div class="form-error" id="confirm-new-password-error"></div>
+                </div>
+
+                <div class="button-group">
+                    <button type="submit" class="btn btn-primary">
+                        <span class="button-text">🔒 Update Password</span>
+                        <span class="spinner" id="password-spinner" style="display: none;"></span>
+                    </button>
+                    <button type="reset" class="btn btn-secondary">↻ Reset</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Toast container -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- Logout confirmation modal -->
+<div class="modal-overlay" id="logout-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <h2>Logout</h2>
+            <button class="modal-close" id="logout-modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p>Are you sure you want to logout?</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="logout-cancel">Cancel</button>
+            <a href="{{ url_for('auth.logout') }}" class="btn btn-danger">Logout</a>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Logout button
+    const logoutBtn = document.getElementById('logout-btn');
+    const logoutModal = document.getElementById('logout-modal');
+    const logoutCancel = document.getElementById('logout-cancel');
+    const logoutModalClose = document.getElementById('logout-modal-close');
+
+    logoutBtn.addEventListener('click', () => logoutModal.classList.add('show'));
+    logoutCancel.addEventListener('click', () => logoutModal.classList.remove('show'));
+    logoutModalClose.addEventListener('click', () => logoutModal.classList.remove('show'));
+    logoutModal.addEventListener('click', (e) => {
+        if (e.target === logoutModal) logoutModal.classList.remove('show');
+    });
+
+    // Collapsible password section
+    const passwordHeader = document.getElementById('password-section-header');
+    passwordHeader.addEventListener('click', function() {
+        this.classList.toggle('collapsed');
+    });
+
+    // Toggle password visibility for password fields
+    document.querySelectorAll('.btn-toggle-password-pwd').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const targetId = this.getAttribute('data-target');
+            const input = document.getElementById(targetId);
+            const type = input.type === 'password' ? 'text' : 'password';
+            input.type = type;
+            this.textContent = type === 'password' ? '👁️' : '👁️‍🗨️';
+        });
+    });
+
+    // Profile form
+    const profileForm = document.getElementById('profile-form');
+    const initialFormState = new FormData(profileForm);
+    let hasChanges = false;
+
+    profileForm.addEventListener('change', function() {
+        const currentFormState = new FormData(this);
+        hasChanges = Array.from(initialFormState.entries()).some(([key, value]) => 
+            currentFormState.get(key) !== value
+        );
+    });
+
+    profileForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        if (!hasChanges) {
+            showToast('No changes made', 'info');
+            return;
+        }
+
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const spinnerEl = document.getElementById('profile-spinner');
+        submitBtn.disabled = true;
+        spinnerEl.style.display = 'inline-block';
+
+        setTimeout(() => {
+            this.submit();
+        }, 300);
+    });
+
+    // Password form
+    const passwordForm = document.getElementById('password-form');
+    const newPasswordInput = document.getElementById('new-password');
+    const strengthMeter = document.getElementById('new-strength-meter');
+    const strengthText = document.getElementById('new-strength-text');
+
+    newPasswordInput.addEventListener('input', function() {
+        const password = this.value;
+        const strength = calculatePasswordStrength(password);
+
+        strengthMeter.className = 'strength-meter-fill ' + strength;
+        strengthText.className = 'strength-text ' + strength;
+
+        switch(strength) {
+            case 'weak':
+                strengthText.textContent = 'Weak password';
+                break;
+            case 'fair':
+                strengthText.textContent = 'Fair password';
+                break;
+            case 'good':
+                strengthText.textContent = 'Good password';
+                break;
+            case 'strong':
+                strengthText.textContent = 'Strong password';
+                break;
+            default:
+                strengthText.textContent = '';
+        }
+
+        document.getElementById('new-password-error').textContent = '';
+    });
+
+    document.getElementById('confirm-new-password').addEventListener('input', function() {
+        if (this.value && newPasswordInput.value !== this.value) {
+            document.getElementById('confirm-new-password-error').textContent = 'Passwords do not match';
+        } else {
+            document.getElementById('confirm-new-password-error').textContent = '';
+        }
+    });
+
+    passwordForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const currentPassword = document.getElementById('current-password').value;
+        const newPassword = newPasswordInput.value;
+        const confirmPassword = document.getElementById('confirm-new-password').value;
+
+        let isValid = true;
+
+        if (!currentPassword) {
+            document.getElementById('current-password-error').textContent = 'Current password is required';
+            isValid = false;
+        }
+
+        if (!newPassword) {
+            document.getElementById('new-password-error').textContent = 'New password is required';
+            isValid = false;
+        } else if (newPassword.length < 6) {
+            document.getElementById('new-password-error').textContent = 'Password must be at least 6 characters';
+            isValid = false;
+        } else if (newPassword === currentPassword) {
+            document.getElementById('new-password-error').textContent = 'New password must be different from current password';
+            isValid = false;
+        }
+
+        if (!confirmPassword) {
+            document.getElementById('confirm-new-password-error').textContent = 'Please confirm your password';
+            isValid = false;
+        } else if (newPassword !== confirmPassword) {
+            document.getElementById('confirm-new-password-error').textContent = 'Passwords do not match';
+            isValid = false;
+        }
+
+        if (!isValid) return;
+
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const spinnerEl = document.getElementById('password-spinner');
+        submitBtn.disabled = true;
+        spinnerEl.style.display = 'inline-block';
+
+        setTimeout(() => {
+            this.submit();
+        }, 300);
+    });
+
+    function calculatePasswordStrength(password) {
+        if (!password) return '';
+        let strength = 0;
+        if (password.length >= 8) strength++;
+        if (password.length >= 12) strength++;
+        if (/[A-Z]/.test(password)) strength++;
+        if (/[a-z]/.test(password)) strength++;
+        if (/\d/.test(password)) strength++;
+        if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) strength++;
+        if (strength <= 1) return 'weak';
+        if (strength <= 3) return 'fair';
+        if (strength <= 4) return 'good';
+        return 'strong';
+    }
+
+    function showToast(message, type = 'info') {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.textContent = message;
+        container.appendChild(toast);
+        setTimeout(() => toast.remove(), 4000);
+    }
+});
+</script>
+{% endblock %}

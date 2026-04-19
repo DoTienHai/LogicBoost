@@ -1,0 +1,358 @@
+{% extends "base.html" %}
+
+{% block title %}Register - LogicBoost{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-card-header">
+            <h1>Create Account</h1>
+            <p>Join LogicBoost and start sharpening your mind</p>
+        </div>
+
+        <!-- Flash messages -->
+        {% if session.get('_flashes') %}
+            <div class="flashes-container">
+                {% for category, message in session.get('_flashes', []) %}
+                    <div class="alert alert-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <form id="register-form" method="POST" action="{{ url_for('auth.register') }}" novalidate>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <!-- Username -->
+            <div class="form-group required">
+                <label for="username">Username</label>
+                <input
+                    type="text"
+                    id="username"
+                    name="username"
+                    placeholder="3-20 characters, letters and numbers"
+                    required
+                    minlength="3"
+                    maxlength="20"
+                    pattern="[a-zA-Z0-9_]+"
+                    autocomplete="username"
+                >
+                <div class="form-help" id="username-help">3-20 characters, alphanumeric and underscore only</div>
+                <div class="form-error" id="username-error"></div>
+            </div>
+
+            <!-- Email -->
+            <div class="form-group required">
+                <label for="email">Email</label>
+                <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    placeholder="your.email@example.com"
+                    required
+                    autocomplete="email"
+                >
+                <div class="form-error" id="email-error"></div>
+            </div>
+
+            <!-- Password -->
+            <div class="form-group required">
+                <label for="password">Password</label>
+                <div class="input-group">
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        placeholder="Create a strong password"
+                        required
+                        minlength="6"
+                        autocomplete="new-password"
+                    >
+                    <div class="input-group-append">
+                        <button
+                            type="button"
+                            class="btn-toggle-password"
+                            id="toggle-password"
+                            aria-label="Show/hide password"
+                        >
+                            👁️
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Password strength meter -->
+                <div class="password-strength">
+                    <div class="strength-meter">
+                        <div class="strength-meter-fill" id="strength-meter"></div>
+                    </div>
+                    <div class="strength-text" id="strength-text"></div>
+                </div>
+
+                <div class="form-error" id="password-error"></div>
+            </div>
+
+            <!-- Confirm Password -->
+            <div class="form-group required">
+                <label for="confirm-password">Confirm Password</label>
+                <input
+                    type="password"
+                    id="confirm-password"
+                    name="confirm_password"
+                    placeholder="Confirm your password"
+                    required
+                    autocomplete="new-password"
+                >
+                <div class="form-error" id="confirm-password-error"></div>
+            </div>
+
+            <!-- First Name (optional) -->
+            <div class="form-group">
+                <label for="first-name">First Name (Optional)</label>
+                <input
+                    type="text"
+                    id="first-name"
+                    name="first_name"
+                    placeholder="Your first name"
+                    autocomplete="given-name"
+                >
+            </div>
+
+            <!-- Last Name (optional) -->
+            <div class="form-group">
+                <label for="last-name">Last Name (Optional)</label>
+                <input
+                    type="text"
+                    id="last-name"
+                    name="last_name"
+                    placeholder="Your last name"
+                    autocomplete="family-name"
+                >
+            </div>
+
+            <!-- Terms & Conditions -->
+            <div class="form-check">
+                <input
+                    type="checkbox"
+                    id="terms"
+                    name="terms"
+                    required
+                >
+                <label for="terms">I agree to the Terms and Conditions</label>
+            </div>
+            <div class="form-error" id="terms-error"></div>
+
+            <!-- Submit button -->
+            <button type="submit" class="btn btn-primary btn-lg" style="width: 100%; margin: 1.5rem 0 1rem 0;">
+                <span class="button-text">Create Account</span>
+                <span class="spinner" id="register-spinner" style="display: none;"></span>
+            </button>
+
+            <!-- Login link -->
+            <p style="text-align: center; color: var(--muted); margin: 0;">
+                Already have an account?
+                <a href="{{ url_for('auth.login') }}" style="color: var(--primary); font-weight: 600; text-decoration: none;">Login</a>
+            </p>
+        </form>
+    </div>
+</div>
+
+<!-- Toast container -->
+<div class="toast-container" id="toast-container"></div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('register-form');
+    const usernameInput = document.getElementById('username');
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    const confirmPasswordInput = document.getElementById('confirm-password');
+    const togglePasswordBtn = document.getElementById('toggle-password');
+    const strengthMeter = document.getElementById('strength-meter');
+    const strengthText = document.getElementById('strength-text');
+
+    // Toggle password visibility
+    togglePasswordBtn.addEventListener('click', function() {
+        const type = passwordInput.type === 'password' ? 'text' : 'password';
+        passwordInput.type = type;
+        confirmPasswordInput.type = type;
+        this.textContent = type === 'password' ? '👁️' : '👁️‍🗨️';
+    });
+
+    // Password strength meter
+    passwordInput.addEventListener('input', function() {
+        const password = this.value;
+        const strength = calculatePasswordStrength(password);
+
+        // Update meter
+        strengthMeter.className = 'strength-meter-fill ' + strength;
+        strengthText.className = 'strength-text ' + strength;
+
+        switch(strength) {
+            case 'weak':
+                strengthText.textContent = 'Weak password';
+                break;
+            case 'fair':
+                strengthText.textContent = 'Fair password';
+                break;
+            case 'good':
+                strengthText.textContent = 'Good password';
+                break;
+            case 'strong':
+                strengthText.textContent = 'Strong password';
+                break;
+            default:
+                strengthText.textContent = '';
+        }
+
+        // Clear error
+        document.getElementById('password-error').textContent = '';
+        this.parentElement.classList.remove('has-error');
+    });
+
+    // Confirm password match check
+    confirmPasswordInput.addEventListener('input', function() {
+        if (this.value && passwordInput.value !== this.value) {
+            document.getElementById('confirm-password-error').textContent = 'Passwords do not match';
+            this.parentElement.classList.add('has-error');
+        } else {
+            document.getElementById('confirm-password-error').textContent = '';
+            this.parentElement.classList.remove('has-error');
+        }
+    });
+
+    // Clear errors on input
+    usernameInput.addEventListener('input', function() {
+        document.getElementById('username-error').textContent = '';
+        this.parentElement.classList.remove('has-error');
+    });
+
+    emailInput.addEventListener('input', function() {
+        document.getElementById('email-error').textContent = '';
+        this.parentElement.classList.remove('has-error');
+    });
+
+    // Form submission
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const username = usernameInput.value.trim();
+        const email = emailInput.value.trim();
+        const password = passwordInput.value;
+        const confirmPassword = confirmPasswordInput.value;
+        const firstName = document.getElementById('first-name').value.trim();
+        const lastName = document.getElementById('last-name').value.trim();
+        const termsCheckbox = document.getElementById('terms');
+
+        // Client-side validation
+        let isValid = true;
+
+        // Username validation
+        if (!username) {
+            showFieldError('username', 'Username is required');
+            isValid = false;
+        } else if (!isUsernameValid(username)) {
+            showFieldError('username', 'Username must be 3-20 characters, alphanumeric and underscore only');
+            isValid = false;
+        }
+
+        // Email validation
+        if (!email) {
+            showFieldError('email', 'Email is required');
+            isValid = false;
+        } else if (!isEmailValid(email)) {
+            showFieldError('email', 'Please enter a valid email');
+            isValid = false;
+        }
+
+        // Password validation
+        if (!password) {
+            showFieldError('password', 'Password is required');
+            isValid = false;
+        } else if (password.length < 6) {
+            showFieldError('password', 'Password must be at least 6 characters');
+            isValid = false;
+        }
+
+        // Confirm password validation
+        if (!confirmPassword) {
+            showFieldError('confirm-password', 'Please confirm your password');
+            isValid = false;
+        } else if (password !== confirmPassword) {
+            showFieldError('confirm-password', 'Passwords do not match');
+            isValid = false;
+        }
+
+        // Terms validation
+        if (!termsCheckbox.checked) {
+            document.getElementById('terms-error').textContent = 'You must agree to the terms';
+            isValid = false;
+        }
+
+        if (!isValid) return;
+
+        // Show loading state
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const spinnerEl = document.getElementById('register-spinner');
+        submitBtn.disabled = true;
+        spinnerEl.style.display = 'inline-block';
+
+        // Submit form
+        setTimeout(() => {
+            form.submit();
+        }, 300);
+    });
+
+    function calculatePasswordStrength(password) {
+        if (!password) return '';
+
+        let strength = 0;
+
+        // Length
+        if (password.length >= 8) strength++;
+        if (password.length >= 12) strength++;
+
+        // Uppercase
+        if (/[A-Z]/.test(password)) strength++;
+
+        // Lowercase
+        if (/[a-z]/.test(password)) strength++;
+
+        // Numbers
+        if (/\d/.test(password)) strength++;
+
+        // Special characters
+        if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) strength++;
+
+        if (strength <= 1) return 'weak';
+        if (strength <= 3) return 'fair';
+        if (strength <= 4) return 'good';
+        return 'strong';
+    }
+
+    function isEmailValid(email) {
+        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return re.test(email);
+    }
+
+    function isUsernameValid(username) {
+        return /^[a-zA-Z0-9_]{3,20}$/.test(username);
+    }
+
+    function showFieldError(fieldId, message) {
+        const field = document.getElementById(fieldId);
+        const errorEl = document.getElementById(fieldId + '-error');
+        errorEl.textContent = message;
+        field.parentElement.classList.add('has-error');
+    }
+});
+</script>
+{% endblock %}

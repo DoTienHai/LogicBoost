@@ -1,0 +1,434 @@
+{% extends "base.html" %}
+
+{% block title %}{% if user %}Edit User - LogicBoost{% else %}Create User - LogicBoost{% endif %}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="admin-container" style="max-width: 600px;">
+    <h1>{% if user %}✏️ Edit User{% else %}➕ Create User{% endif %}</h1>
+
+    <!-- Flash messages -->
+    {% if session.get('_flashes') %}
+        <div class="flashes-container" style="margin-bottom: 2rem;">
+            {% for category, message in session.get('_flashes', []) %}
+                <div class="alert alert-{{ category }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="admin-card">
+        <form id="user-form" method="POST" action="{% if user %}{{ url_for('admin.user_form', user_id=user.id) }}{% else %}{{ url_for('admin.user_form') }}{% endif %}" novalidate>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <!-- Username -->
+            <div class="form-group required">
+                <label for="username">Username</label>
+                <input
+                    type="text"
+                    id="username"
+                    name="username"
+                    placeholder="3-20 characters, letters and numbers"
+                    value="{{ user.username or '' }}"
+                    required
+                    minlength="3"
+                    maxlength="20"
+                    pattern="[a-zA-Z0-9_]+"
+                    {% if user %}disabled{% endif %}
+                    autocomplete="username"
+                >
+                <div class="form-help">{% if user %}Username cannot be changed{% else %}3-20 characters, alphanumeric and underscore only{% endif %}</div>
+                <div class="form-error" id="username-error"></div>
+            </div>
+
+            <!-- Email -->
+            <div class="form-group required">
+                <label for="email">Email</label>
+                <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    placeholder="user@example.com"
+                    value="{{ user.email or '' }}"
+                    required
+                    autocomplete="email"
+                >
+                <div class="form-error" id="email-error"></div>
+            </div>
+
+            <!-- First Name -->
+            <div class="form-group">
+                <label for="first-name">First Name</label>
+                <input
+                    type="text"
+                    id="first-name"
+                    name="first_name"
+                    placeholder="User's first name"
+                    value="{{ user.first_name or '' }}"
+                    autocomplete="given-name"
+                >
+            </div>
+
+            <!-- Last Name -->
+            <div class="form-group">
+                <label for="last-name">Last Name</label>
+                <input
+                    type="text"
+                    id="last-name"
+                    name="last_name"
+                    placeholder="User's last name"
+                    value="{{ user.last_name or '' }}"
+                    autocomplete="family-name"
+                >
+            </div>
+
+            <!-- Password (for new users) -->
+            {% if not user %}
+                <div class="form-group required">
+                    <label for="password">Password</label>
+                    <div class="input-group">
+                        <input
+                            type="password"
+                            id="password"
+                            name="password"
+                            placeholder="Create a password"
+                            required
+                            minlength="6"
+                            autocomplete="new-password"
+                        >
+                        <div class="input-group-append">
+                            <button
+                                type="button"
+                                class="btn-toggle-password"
+                                id="toggle-password"
+                                aria-label="Show/hide password"
+                            >
+                                👁️
+                            </button>
+                        </div>
+                    </div>
+                    <div class="password-strength">
+                        <div class="strength-meter">
+                            <div class="strength-meter-fill" id="strength-meter"></div>
+                        </div>
+                        <div class="strength-text" id="strength-text"></div>
+                    </div>
+                    <div class="form-error" id="password-error"></div>
+                </div>
+
+                <div class="form-group required">
+                    <label for="confirm-password">Confirm Password</label>
+                    <input
+                        type="password"
+                        id="confirm-password"
+                        name="confirm_password"
+                        placeholder="Confirm password"
+                        required
+                        autocomplete="new-password"
+                    >
+                    <div class="form-error" id="confirm-password-error"></div>
+                </div>
+            {% endif %}
+
+            <!-- Status Toggle -->
+            <div class="form-group">
+                <label>Account Status</label>
+                <div class="toggle-switch">
+                    <span>{% if user and user.is_active %}Active{% elif user %}Inactive{% else %}Inactive{% endif %}</span>
+                    <label class="switch">
+                        <input type="checkbox" name="is_active" value="true" {% if user and user.is_active %}checked{% endif %}>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Roles Section -->
+            <div class="form-group">
+                <label>Assign Roles</label>
+                <p style="font-size: 0.9rem; color: var(--muted); margin-bottom: 1rem;">Current roles:</p>
+
+                <!-- Current roles -->
+                <div id="current-roles" style="margin-bottom: 1rem; min-height: 36px;">
+                    {% if user and user.roles %}
+                        {% for role in user.roles %}
+                            <span class="role-tag {{ role.name }}">
+                                {% if role.name == 'admin' %}🔴{% elif role.name == 'content_creator' %}🔵{% else %}🟢{% endif %}
+                                {{ role.display_name }}
+                                <button
+                                    type="button"
+                                    class="remove-role-btn"
+                                    data-role-id="{{ role.id }}"
+                                    data-role-name="{{ role.display_name }}"
+                                    aria-label="Remove {{ role.display_name }} role"
+                                >
+                                    ✕
+                                </button>
+                            </span>
+                        {% endfor %}
+                    {% else %}
+                        <p style="color: var(--muted); font-size: 0.9rem;">No roles assigned</p>
+                    {% endif %}
+                </div>
+
+                <!-- Add role -->
+                <div style="display: flex; gap: 1rem;">
+                    <select id="role-select" class="filter-select" style="flex: 1;">
+                        <option value="">Select role to add...</option>
+                        {% for role in available_roles %}
+                            <option value="{{ role.id }}">{{ role.display_name }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="button" id="add-role-btn" class="btn btn-secondary">➕ Add Role</button>
+                </div>
+
+                <input type="hidden" id="roles-input" name="roles" value="">
+            </div>
+
+            <!-- Form buttons -->
+            <div class="button-group">
+                <button type="submit" class="btn btn-primary">
+                    <span class="button-text">{% if user %}💾 Save Changes{% else %}➕ Create User{% endif %}</span>
+                    <span class="spinner" id="form-spinner" style="display: none;"></span>
+                </button>
+                <a href="{{ url_for('admin.users') }}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Toast container -->
+<div class="toast-container" id="toast-container"></div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('user-form');
+    const roleSelect = document.getElementById('role-select');
+    const addRoleBtn = document.getElementById('add-role-btn');
+    const currentRolesDiv = document.getElementById('current-roles');
+    const togglePasswordBtn = document.getElementById('toggle-password');
+    const passwordInput = document.getElementById('password');
+    const confirmPasswordInput = document.getElementById('confirm-password');
+    const strengthMeter = document.getElementById('strength-meter');
+    const strengthText = document.getElementById('strength-text');
+
+    // Store assigned roles
+    let assignedRoles = new Set();
+    {% if user and user.roles %}
+        {% for role in user.roles %}
+            assignedRoles.add('{{ role.id }}');
+        {% endfor %}
+    {% endif %}
+
+    // Toggle password visibility
+    if (togglePasswordBtn) {
+        togglePasswordBtn.addEventListener('click', function() {
+            const type = passwordInput.type === 'password' ? 'text' : 'password';
+            passwordInput.type = type;
+            confirmPasswordInput.type = type;
+            this.textContent = type === 'password' ? '👁️' : '👁️‍🗨️';
+        });
+    }
+
+    // Password strength meter
+    if (passwordInput) {
+        passwordInput.addEventListener('input', function() {
+            const password = this.value;
+            const strength = calculatePasswordStrength(password);
+
+            strengthMeter.className = 'strength-meter-fill ' + strength;
+            strengthText.className = 'strength-text ' + strength;
+
+            switch(strength) {
+                case 'weak':
+                    strengthText.textContent = 'Weak password';
+                    break;
+                case 'fair':
+                    strengthText.textContent = 'Fair password';
+                    break;
+                case 'good':
+                    strengthText.textContent = 'Good password';
+                    break;
+                case 'strong':
+                    strengthText.textContent = 'Strong password';
+                    break;
+                default:
+                    strengthText.textContent = '';
+            }
+
+            document.getElementById('password-error').textContent = '';
+        });
+
+        confirmPasswordInput.addEventListener('input', function() {
+            if (this.value && passwordInput.value !== this.value) {
+                document.getElementById('confirm-password-error').textContent = 'Passwords do not match';
+            } else {
+                document.getElementById('confirm-password-error').textContent = '';
+            }
+        });
+    }
+
+    // Add role
+    addRoleBtn.addEventListener('click', function() {
+        const selectedRoleId = roleSelect.value;
+
+        if (!selectedRoleId) {
+            showToast('Please select a role', 'warning');
+            return;
+        }
+
+        if (assignedRoles.has(selectedRoleId)) {
+            showToast('This role is already assigned', 'info');
+            return;
+        }
+
+        const selectedOption = roleSelect.options[roleSelect.selectedIndex];
+        const roleName = selectedOption.textContent;
+        const roleClass = selectedOption.value; // Will use role id
+
+        assignedRoles.add(selectedRoleId);
+        updateRolesDisplay();
+        roleSelect.value = '';
+        showToast(`${roleName} role added`, 'success');
+    });
+
+    // Remove role
+    currentRolesDiv.addEventListener('click', function(e) {
+        if (e.target.classList.contains('remove-role-btn')) {
+            e.preventDefault();
+            const roleId = e.target.getAttribute('data-role-id');
+            const roleName = e.target.getAttribute('data-role-name');
+
+            assignedRoles.delete(roleId);
+            updateRolesDisplay();
+            showToast(`${roleName} role removed`, 'success');
+        }
+    });
+
+    function updateRolesDisplay() {
+        if (assignedRoles.size === 0) {
+            currentRolesDiv.innerHTML = '<p style="color: var(--muted); font-size: 0.9rem;">No roles assigned</p>';
+        } else {
+            let html = '';
+            const roleMap = {
+                '1': { name: 'admin', display: 'Administrator', emoji: '🔴' },
+                '2': { name: 'content_creator', display: 'Content Creator', emoji: '🔵' },
+                '3': { name: 'user', display: 'User', emoji: '🟢' }
+            };
+
+            assignedRoles.forEach(roleId => {
+                const roleInfo = roleMap[roleId] || { name: 'unknown', display: 'Unknown', emoji: '⚪' };
+                html += `
+                    <span class="role-tag ${roleInfo.name}">
+                        ${roleInfo.emoji} ${roleInfo.display}
+                        <button type="button" class="remove-role-btn" data-role-id="${roleId}" data-role-name="${roleInfo.display}" aria-label="Remove ${roleInfo.display} role">
+                            ✕
+                        </button>
+                    </span>
+                `;
+            });
+            currentRolesDiv.innerHTML = html;
+        }
+
+        // Update hidden input
+        document.getElementById('roles-input').value = Array.from(assignedRoles).join(',');
+    }
+
+    // Form submission
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const username = document.getElementById('username').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const isNewUser = !('{{ user.id if user else '' }}');
+
+        let isValid = true;
+
+        // Username validation
+        if (!username) {
+            document.getElementById('username-error').textContent = 'Username is required';
+            isValid = false;
+        }
+
+        // Email validation
+        if (!email) {
+            document.getElementById('email-error').textContent = 'Email is required';
+            isValid = false;
+        } else if (!isEmailValid(email)) {
+            document.getElementById('email-error').textContent = 'Please enter a valid email';
+            isValid = false;
+        }
+
+        // Password validation (new user only)
+        if (isNewUser) {
+            const password = passwordInput.value;
+            const confirmPassword = confirmPasswordInput.value;
+
+            if (!password) {
+                document.getElementById('password-error').textContent = 'Password is required';
+                isValid = false;
+            } else if (password.length < 6) {
+                document.getElementById('password-error').textContent = 'Password must be at least 6 characters';
+                isValid = false;
+            }
+
+            if (!confirmPassword) {
+                document.getElementById('confirm-password-error').textContent = 'Please confirm password';
+                isValid = false;
+            } else if (password !== confirmPassword) {
+                document.getElementById('confirm-password-error').textContent = 'Passwords do not match';
+                isValid = false;
+            }
+        }
+
+        if (!isValid) return;
+
+        // Show loading state
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const spinnerEl = document.getElementById('form-spinner');
+        submitBtn.disabled = true;
+        spinnerEl.style.display = 'inline-block';
+
+        setTimeout(() => {
+            this.submit();
+        }, 300);
+    });
+
+    function isEmailValid(email) {
+        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return re.test(email);
+    }
+
+    function calculatePasswordStrength(password) {
+        if (!password) return '';
+        let strength = 0;
+        if (password.length >= 8) strength++;
+        if (password.length >= 12) strength++;
+        if (/[A-Z]/.test(password)) strength++;
+        if (/[a-z]/.test(password)) strength++;
+        if (/\d/.test(password)) strength++;
+        if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) strength++;
+        if (strength <= 1) return 'weak';
+        if (strength <= 3) return 'fair';
+        if (strength <= 4) return 'good';
+        return 'strong';
+    }
+
+    function showToast(message, type = 'info') {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.textContent = message;
+        container.appendChild(toast);
+        setTimeout(() => toast.remove(), 4000);
+    }
+});
+</script>
+{% endblock %}

@@ -42,7 +42,7 @@ def get_random_question(answered_ids=None, last_question_id=None):
     return random.choice(available) if available else None
 
 
-def check_answer(question_id, user_answer, time_taken=0):
+def check_answer(question_id, user_answer, time_taken=0, user_id=None):
     """
     Check if user's answer is correct and record it.
     
@@ -50,6 +50,7 @@ def check_answer(question_id, user_answer, time_taken=0):
         question_id: ID of the question
         user_answer: User's answer (string)
         time_taken: Time taken to answer in seconds
+        user_id: Optional user ID to associate the answer with
         
     Returns:
         dict with keys:
@@ -76,16 +77,19 @@ def check_answer(question_id, user_answer, time_taken=0):
         
         is_correct = normalize(user_answer) == normalize(question.answer)
     
-    # Record answer in database
-    user_answer_record = UserAnswer(
-        question_id=question_id,
-        question_type=question_type,
-        chosen=user_answer,
-        is_correct=is_correct,
-        time_taken=time_taken,
-    )
-    db.session.add(user_answer_record)
-    db.session.commit()
+    # Record answer in database (only if user_id is provided)
+    if user_id is not None:
+        user_answer_record = UserAnswer(
+            user_id=user_id,
+            question_id=question_id,
+            question_type=question_type,
+            mode="mini_game",
+            chosen=user_answer,
+            is_correct=is_correct,
+            time_taken=time_taken,
+        )
+        db.session.add(user_answer_record)
+        db.session.commit()
     
     result = {
         "is_correct": is_correct,
