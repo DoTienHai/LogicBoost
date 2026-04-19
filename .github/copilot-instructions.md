@@ -358,27 +358,33 @@ print(int(level))      # 3
 ```sql
 CREATE TABLE user_answers (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,
-    question_id     INTEGER NOT NULL,       -- FK → questions.id
+    user_id         INTEGER NOT NULL,       -- FK → users.id (WHO answered)
+    question_id     INTEGER NOT NULL,       -- FK → questions.id (WHAT question)
     question_type   TEXT NOT NULL,          -- 'multiple_choice' or 'free_text'
+    mode            TEXT NOT NULL,          -- 'daily_challenge', 'mini_game', 'real_world' (WHERE answered)
     chosen          TEXT NOT NULL,          -- 'a','b','c','d' or free text input
     is_correct      BOOLEAN NOT NULL,
     time_taken      INTEGER,                -- Seconds taken to answer
     answered_at     DATETIME DEFAULT CURRENT_TIMESTAMP,
     
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
 );
 ```
 
 ### Table: `stats`
-> Tracks total correct/incorrect answers per mode.
+> Tracks total correct/incorrect answers per mode per user.
 
 ```sql
 CREATE TABLE stats (
-    id            INTEGER PRIMARY KEY AUTOINCREMENT,
-    mode          TEXT NOT NULL UNIQUE,     -- 'daily_challenge', 'mini_game', 'real_world'
-    correct       INTEGER DEFAULT 0,        -- Total correct answers
-    incorrect     INTEGER DEFAULT 0,        -- Total incorrect answers
-    updated_at    DATETIME DEFAULT CURRENT_TIMESTAMP
+    user_id       INTEGER NOT NULL,        -- FK → users.id (Whose stats)
+    mode          TEXT NOT NULL,           -- 'daily_challenge', 'mini_game', 'real_world'
+    correct       INTEGER DEFAULT 0,       -- Total correct answers
+    incorrect     INTEGER DEFAULT 0,       -- Total incorrect answers
+    updated_at    DATETIME DEFAULT CURRENT_TIMESTAMP,
+    
+    PRIMARY KEY (user_id, mode),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 ```
 
