@@ -1477,3 +1477,637 @@
     }
 }
 
+/* ========================================
+   USER MANAGEMENT — SHARED LAYOUT
+   ======================================== */
+
+.admin-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid #eee;
+    background: #fff;
+}
+
+.admin-header h1 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 0;
+}
+
+.admin-header .header-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.admin-card {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    overflow: hidden;
+    margin: 1.5rem 2rem;
+}
+
+/* ========================================
+   SEARCH & FILTER BAR
+   ======================================== */
+
+.search-bar {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding: 1rem 1.5rem;
+    background: #f9f9f9;
+    border-bottom: 1px solid #eee;
+}
+
+.search-input {
+    flex: 1;
+    min-width: 200px;
+    padding: 0.6rem 1rem;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.search-input:focus {
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 3px rgba(74,144,226,0.15);
+}
+
+.filter-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.filter-group label {
+    font-size: 0.875rem;
+    color: #666;
+    white-space: nowrap;
+}
+
+.filter-select {
+    padding: 0.6rem 1rem;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    background: #fff;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.filter-select:focus {
+    border-color: #4a90e2;
+}
+
+/* ========================================
+   USERS TABLE
+   ======================================== */
+
+.table-container {
+    overflow-x: auto;
+    width: 100%;
+}
+
+#users-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+#users-table thead {
+    background: #f5f5f5;
+    border-bottom: 2px solid #ddd;
+}
+
+#users-table th {
+    padding: 0.9rem 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: #444;
+    white-space: nowrap;
+    user-select: none;
+}
+
+#users-table th.sortable {
+    cursor: pointer;
+}
+
+#users-table th.sortable:hover {
+    background: #ebebeb;
+}
+
+#users-table td {
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid #f0f0f0;
+    color: #555;
+    vertical-align: middle;
+}
+
+#users-table tbody tr:hover {
+    background: #fafafa;
+}
+
+#users-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* ========================================
+   ROLE TAGS
+   ======================================== */
+
+.role-tag {
+    display: inline-block;
+    padding: 0.2rem 0.65rem;
+    border-radius: 12px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    margin: 2px 3px 2px 0;
+    text-transform: capitalize;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+}
+
+.role-tag.admin {
+    background: #ffe5e5;
+    color: #c0392b;
+    border: 1px solid #f5c6c6;
+}
+
+.role-tag.content_creator {
+    background: #e3f0ff;
+    color: #2563eb;
+    border: 1px solid #bfdbfe;
+}
+
+.role-tag.user {
+    background: #e8f5e9;
+    color: #2e7d32;
+    border: 1px solid #c8e6c9;
+}
+
+.role-tags-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+/* ========================================
+   STATUS BADGES
+   ======================================== */
+
+.badge {
+    display: inline-block;
+    padding: 0.2rem 0.65rem;
+    border-radius: 12px;
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+
+.badge-success {
+    background: #e8f5e9;
+    color: #2e7d32;
+    border: 1px solid #c8e6c9;
+}
+
+.badge-light {
+    background: #f5f5f5;
+    color: #888;
+    border: 1px solid #ddd;
+}
+
+.badge-danger {
+    background: #ffe5e5;
+    color: #c0392b;
+    border: 1px solid #f5c6c6;
+}
+
+/* ========================================
+   EMPTY STATE
+   ======================================== */
+
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #999;
+}
+
+.empty-state-icon {
+    font-size: 3rem;
+    margin-bottom: 0.75rem;
+    line-height: 1;
+}
+
+.empty-state-text {
+    font-size: 1rem;
+    color: #aaa;
+}
+
+/* ========================================
+   PAGINATION
+   ======================================== */
+
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 1.25rem 1rem;
+    border-top: 1px solid #f0f0f0;
+    flex-wrap: wrap;
+}
+
+.page-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    height: 36px;
+    padding: 0 0.75rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #444;
+    background: #fff;
+    border: 1px solid #ddd;
+    text-decoration: none;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.page-btn:hover {
+    background: #f0f4ff;
+    border-color: #4a90e2;
+    color: #4a90e2;
+}
+
+.page-btn.active {
+    background: #4a90e2;
+    border-color: #4a90e2;
+    color: #fff;
+    font-weight: 700;
+    pointer-events: none;
+}
+
+.page-ellipsis {
+    padding: 0 0.25rem;
+    color: #aaa;
+}
+
+/* ========================================
+   DELETE CONFIRMATION MODAL
+   ======================================== */
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+}
+
+.modal-overlay.active {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.modal {
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.18);
+    width: 90%;
+    max-width: 460px;
+    overflow: hidden;
+    transform: scale(0.95);
+    transition: transform 0.2s;
+}
+
+.modal-overlay.active .modal {
+    transform: scale(1);
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid #eee;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #1a1a1a;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 1.4rem;
+    cursor: pointer;
+    color: #999;
+    line-height: 1;
+    padding: 0.2rem;
+    border-radius: 4px;
+    transition: color 0.15s, background 0.15s;
+}
+
+.modal-close:hover {
+    color: #333;
+    background: #f0f0f0;
+}
+
+.modal-body {
+    padding: 1.5rem;
+    color: #555;
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+.modal-footer {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #eee;
+    background: #fafafa;
+}
+
+/* ========================================
+   TOAST NOTIFICATIONS
+   ======================================== */
+
+.toast-container,
+#toast-container {
+    position: fixed;
+    top: 1.25rem;
+    right: 1.25rem;
+    z-index: 1100;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    pointer-events: none;
+}
+
+.toast {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 260px;
+    max-width: 380px;
+    padding: 0.85rem 1.2rem;
+    border-radius: 8px;
+    background: #333;
+    color: #fff;
+    font-size: 0.9rem;
+    font-weight: 500;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+    pointer-events: all;
+    animation: toastIn 0.3s ease forwards;
+}
+
+.toast.fade-out {
+    animation: toastOut 0.3s ease forwards;
+}
+
+.toast.success {
+    background: #2e7d32;
+}
+
+.toast.error {
+    background: #c0392b;
+}
+
+.toast.warning {
+    background: #e67e22;
+}
+
+.toast.info {
+    background: #2563eb;
+}
+
+@keyframes toastIn {
+    from { opacity: 0; transform: translateX(40px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes toastOut {
+    from { opacity: 1; transform: translateX(0); }
+    to   { opacity: 0; transform: translateX(40px); }
+}
+
+/* ========================================
+   USER DETAIL PAGE
+   ======================================== */
+
+.user-detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    padding: 1.5rem 2rem;
+}
+
+.profile-section {
+    padding: 1.5rem;
+    border: 1px solid #eee;
+    border-radius: 8px;
+}
+
+.profile-section h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #444;
+    margin: 0 0 1rem 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.profile-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.info-row {
+    display: flex;
+    gap: 0.75rem;
+    font-size: 0.9rem;
+    align-items: flex-start;
+}
+
+.info-label {
+    font-weight: 600;
+    color: #777;
+    min-width: 120px;
+    flex-shrink: 0;
+}
+
+.info-value {
+    color: #333;
+    flex: 1;
+    word-break: break-word;
+}
+
+/* Role assignment section */
+.roles-section {
+    padding: 1.5rem;
+}
+
+.roles-section h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #444;
+    margin: 0 0 1rem 0;
+}
+
+.role-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #f5f5f5;
+}
+
+.role-row:last-child {
+    border-bottom: none;
+}
+
+/* ========================================
+   USER FORM ROLES SECTION
+   ======================================== */
+
+.roles-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+}
+
+.role-checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+}
+
+.role-checkbox-item:hover {
+    border-color: #4a90e2;
+    background: #f0f7ff;
+}
+
+.role-checkbox-item input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #4a90e2;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.role-checkbox-label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #333;
+}
+
+.role-checkbox-desc {
+    font-size: 0.78rem;
+    color: #999;
+    margin-top: 2px;
+}
+
+/* ========================================
+   RESPONSIVE — USER MANAGEMENT
+   ======================================== */
+
+@media (max-width: 768px) {
+    .admin-header {
+        padding: 1rem;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .admin-card {
+        margin: 1rem 0;
+        border-radius: 0;
+    }
+
+    .search-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .search-input {
+        min-width: unset;
+        width: 100%;
+    }
+
+    .filter-group {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .filter-select {
+        flex: 1;
+    }
+
+    .user-detail-grid {
+        grid-template-columns: 1fr;
+        padding: 1rem;
+    }
+
+    .modal-footer {
+        flex-direction: column-reverse;
+    }
+
+    .modal-footer .btn {
+        width: 100%;
+    }
+
+    #users-table thead {
+        display: none;
+    }
+
+    #users-table td {
+        display: block;
+        padding: 0.5rem 1rem;
+    }
+
+    #users-table td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: #888;
+        font-size: 0.75rem;
+        display: block;
+        margin-bottom: 2px;
+    }
+
+    #users-table tbody tr {
+        display: block;
+        border: 1px solid #eee;
+        border-radius: 8px;
+        margin: 0.75rem;
+        padding: 0.5rem 0;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+}
+

@@ -73,9 +73,9 @@
                 </thead>
                 <tbody id="users-tbody">
                     {% for user in users %}
-                        <tr data-user-id="{{ user.id }}">
+                        <tr data-user-id="{{ user.id }}" class="user-row" data-username="{{ user.username }}">
                             <td><input type="checkbox" class="user-checkbox" value="{{ user.id }}"></td>
-                            <td class="username" onclick="editUser({{ user.id }})"><strong>{{ user.username }}</strong></td>
+                            <td class="username" data-editable-user-id="{{ user.id }}"><strong>{{ user.username }}</strong></td>
                             <td>{{ user.email }}</td>
                             <td>{{ user.first_name or '' }} {{ user.last_name or '' }}</td>
                             <td>
@@ -103,7 +103,7 @@
                                     <a href="{{ url_for('admin_users.edit_user_get', user_id=user.id) }}" class="btn btn-sm btn-secondary">✏️</a>
                                 {% endif %}
                                 {% if current_user.has_permission('delete_users') %}
-                                    <button class="btn btn-sm btn-danger" onclick="deleteUser({{ user.id }}, '{{ user.username }}')">🗑️</button>
+                                    <button class="btn btn-sm btn-danger delete-user-btn" data-user-id="{{ user.id }}" data-username="{{ user.username }}">🗑️</button>
                                 {% endif %}
                             </td>
                         </tr>
@@ -134,8 +134,24 @@
         </div>
     {% endif %}
 
-    <!-- Pagination (if needed) -->
-    <div class="pagination" id="pagination"></div>
+    <!-- Pagination -->
+    {% if pagination and pagination.pages > 1 %}
+        <div class="pagination">
+            {% if pagination.has_prev %}
+                <a href="?page={{ pagination.prev_num }}" class="page-btn">← Prev</a>
+            {% endif %}
+            {% for num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                {% if num %}
+                    <a href="?page={{ num }}" class="page-btn {% if num == pagination.page %}active{% endif %}">{{ num }}</a>
+                {% else %}
+                    <span class="page-ellipsis">…</span>
+                {% endif %}
+            {% endfor %}
+            {% if pagination.has_next %}
+                <a href="?page={{ pagination.next_num }}" class="page-btn">Next →</a>
+            {% endif %}
+        </div>
+    {% endif %}
 </div>
 
 <!-- Toast container -->
@@ -179,6 +195,30 @@ document.addEventListener('DOMContentLoaded', function() {
     const deleteCancel = document.getElementById('delete-cancel');
     const deleteForm = document.getElementById('delete-form');
     const userCheckboxes = document.querySelectorAll('.user-checkbox');
+    const usersTbody = document.getElementById('users-tbody');
+
+    // Event delegation: Edit user
+    if (usersTbody) {
+        usersTbody.addEventListener('click', function(e) {
+            const editableCell = e.target.closest('[data-editable-user-id]');
+            if (editableCell) {
+                const userId = editableCell.dataset.editableUserId;
+                window.location.href = `/admin/users/${userId}/edit`;
+            }
+        });
+    }
+
+    // Event delegation: Delete user
+    document.addEventListener('click', function(e) {
+        const deleteBtn = e.target.closest('.delete-user-btn');
+        if (deleteBtn) {
+            const userId = deleteBtn.dataset.userId;
+            const username = deleteBtn.dataset.username;
+            currentDeleteUserId = userId;
+            document.getElementById('delete-username').textContent = username;
+            deleteModal.classList.add('active');
+        }
+    });
 
     // Search and filter
     if (searchInput) {
@@ -206,18 +246,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Modal close handlers
     deleteModalClose.addEventListener('click', () => {
-        deleteModal.classList.remove('show');
+        deleteModal.classList.remove('active');
         currentDeleteUserId = null;
     });
 
     deleteCancel.addEventListener('click', () => {
-        deleteModal.classList.remove('show');
+        deleteModal.classList.remove('active');
         currentDeleteUserId = null;
     });
 
     deleteModal.addEventListener('click', (e) => {
         if (e.target === deleteModal) {
-            deleteModal.classList.remove('show');
+            deleteModal.classList.remove('active');
             currentDeleteUserId = null;
         }
     });
@@ -225,14 +265,13 @@ document.addEventListener('DOMContentLoaded', function() {
     deleteForm.addEventListener('submit', function(e) {
         e.preventDefault();
         if (currentDeleteUserId) {
+            const formData = new FormData();
+            formData.append('csrf_token', '{{ csrf_token() }}');
             fetch(`/admin/users/${currentDeleteUserId}/delete`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': '{{ csrf_token() }}'
-                }
+                body: formData
             }).then(response => {
-                if (response.ok) {
+                if (response.ok || response.redirected) {
                     window.location.reload();
                 } else {
                     showToast('Failed to delete user', 'error');
@@ -305,18 +344,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-function editUser(userId) {
-    window.location.href = `/admin/users/${userId}/edit`;
-}
-
-function deleteUser(userId, username) {
-    currentDeleteUserId = userId;
-    document.getElementById('delete-username').textContent = username;
-    document.getElementById('delete-modal').classList.add('show');
-}
-
 function sortTable(column) {
-    showToast('Sorting not yet implemented', 'info');
+    console.log('Sorting by:', column);
+    // Implementation would go here for actual sorting
 }
 
 function showToast(message, type = 'info') {

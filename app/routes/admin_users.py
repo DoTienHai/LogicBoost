@@ -15,8 +15,8 @@ def list_users_get():
     """Display list of all users."""
     page = request.args.get("page", 1, type=int)
     per_page = 20
-    users = User.query.paginate(page=page, per_page=per_page)
-    return render_template("admin/users.html", users=users)
+    pagination = User.query.order_by(User.created_at.desc()).paginate(page=page, per_page=per_page)
+    return render_template("admin/users.html", users=pagination.items, pagination=pagination)
 
 
 @admin_users_bp.route("/users/<int:user_id>", methods=["GET"])
