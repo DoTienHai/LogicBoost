@@ -15,10 +15,11 @@
 11. [✅ Answer Checking](#-answer-checking)
 12. [🛠️ Admin Panel](#-admin-panel)
 13. [🎮 Feature Specifications](#-feature-specifications)
-14. [📐 Coding Guidelines](#-coding-guidelines)
-15. [🔧 Environment Variables (.env)](#-environment-variables-env)
-16. [❌ Out of Scope for MVP](#-out-of-scope-for-mvp)
-17. [✅ Code Quality Rules](#-code-quality-rules)
+14. [🌐 API Routing Rules](#-api-routing-rules)
+15. [📐 Coding Guidelines](#-coding-guidelines)
+16. [🔧 Environment Variables (.env)](#-environment-variables-env)
+17. [❌ Out of Scope for MVP](#-out-of-scope-for-mvp)
+18. [✅ Code Quality Rules](#-code-quality-rules)
 
 ---
 
@@ -894,6 +895,136 @@ def import_from_excel(filepath):
 
 ---
 
+## 🌐 API Routing Rules
+
+### Golden Rule: Separate GET and POST
+
+**NEVER combine GET and POST in a single route handler.**
+
+❌ **WRONG:**
+```python
+@bp.route("/form", methods=["GET", "POST"])
+def form():
+    if request.method == "POST":
+        # Process form
+    return render_template("form.html")
+```
+
+✅ **CORRECT:**
+```python
+@bp.route("/form", methods=["GET"])
+def form_get():
+    """Display form."""
+    return render_template("form.html")
+
+@bp.route("/form", methods=["POST"])
+def form_post():
+    """Process form submission."""
+    # Process form
+    return redirect(url_for("bp.form_get"))
+```
+
+### Naming Convention for Split Routes
+
+**Pattern:** `{resource}_{method_name}()`
+
+| Purpose | Naming | Example |
+|---------|--------|---------|
+| Display form/page | `{resource}_get()` | `question_form_get()` |
+| Process submission | `{resource}_post()` | `question_form_post()` |
+| Show detail page | `{resource}_detail()` | `user_detail()` |
+| List items | `list_{resources}()` | `list_users()` |
+| Show edit form | `{resource}_edit_get()` | `user_edit_get()` |
+| Process edit | `{resource}_edit_post()` | `user_edit_post()` |
+
+### Benefits of Separation
+
+| Aspect | Benefit |
+|--------|---------|
+| **Readability** | Each function has single purpose (GET or POST) |
+| **Testability** | Can test GET and POST flows independently |
+| **Maintainability** | Easier to locate and modify GET/POST logic |
+| **Error Handling** | Form display errors separate from submission errors |
+| **Performance** | Can cache GET responses separately from POST |
+
+### URL Routing with Multiple Decorators
+
+For routes that handle both create and edit on the same URL, use defaults:
+
+```python
+@bp.route("/items/", defaults={"item_id": None}, methods=["GET"])
+@bp.route("/items/<int:item_id>/", methods=["GET"])
+def item_get(item_id=None):
+    """Display form for creating or editing item."""
+    item = None
+    if item_id:
+        item = Item.query.get_or_404(item_id)
+    return render_template("item_form.html", item=item)
+
+@bp.route("/items/", defaults={"item_id": None}, methods=["POST"])
+@bp.route("/items/<int:item_id>/", methods=["POST"])
+def item_post(item_id=None):
+    """Process form for creating or editing item."""
+    item = None
+    if item_id:
+        item = Item.query.get_or_404(item_id)
+    
+    # ... process form ...
+    
+    if item_id:
+        return redirect(url_for("bp.list_items"))
+    else:
+        return redirect(url_for("bp.item_get", item_id=new_item.id))
+```
+
+### Redirect Pattern
+
+When POST completes successfully, redirect to GET route:
+
+```python
+# In POST handler
+if success:
+    flash("Success message", "success")
+    return redirect(url_for("bp.resource_get", resource_id=id))  # ← Use GET route name
+```
+
+### Form Handling Pattern
+
+```python
+# GET: Display empty form
+@bp.route("/form", methods=["GET"])
+def form_get():
+    return render_template("form.html", form_data={})
+
+# POST: Validate and process
+@bp.route("/form", methods=["POST"])
+def form_post():
+    is_valid, errors = validate_data(request.form)
+    
+    if not is_valid:
+        return render_template("form.html", errors=errors, form_data=request.form.to_dict()), 400
+    
+    # Process...
+    
+    flash("Success!", "success")
+    return redirect(url_for("bp.form_get"))
+```
+
+### Current Status
+
+✅ **auth.py** - Fully separated:
+- `login_get()` / `login_post()`
+- `profile_get()` / `profile_post()`
+- `change_password_get()` / `change_password_post()`
+
+🟡 **admin.py** - Partially separated:
+- `add_question_get()` / `add_question_post()` ✅
+- `edit_question_get()` / `edit_question_post()` ✅
+- `import_page_get()` / `import_page_post()` ✅
+- `user_form()` - **TODO**: Split into `user_create_get/post()` and `user_edit_get/post()`
+
+---
+
 ## 📐 Coding Guidelines
 
 ### General
@@ -907,6 +1038,7 @@ def import_from_excel(filepath):
 - API routes return JSON; page routes return HTML
 - Handle all errors with proper HTTP status codes
 - Use Flask-Migrate for all database schema changes
+- **API Routing**: Always separate GET and POST handlers (see [🌐 API Routing Rules](#-api-routing-rules))
 
 ### Frontend
 - Mobile-first responsive design

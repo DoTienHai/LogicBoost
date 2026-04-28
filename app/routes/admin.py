@@ -139,12 +139,20 @@ def index():
     return render_template("admin/index.html", questions=questions)
 
 
-@admin_bp.route("/question/new", methods=["GET", "POST"])
+@admin_bp.route("/question/new", methods=["GET"])
 @login_required
 @require_permission("create_questions")
-def add_question():
-    """Add new question form."""
-    if request.method == "POST":
+def add_question_get():
+    """Display add question form."""
+    return render_template("admin/question_form.html", form_data={})
+
+
+@admin_bp.route("/question/new", methods=["POST"])
+@login_required
+@require_permission("create_questions")
+def add_question_post():
+    """Process new question submission."""
+    if True:
         # Validate input
         is_valid, errors = validate_question_data(request.form)
         if not is_valid:
@@ -218,17 +226,25 @@ def add_question():
                 form_data=request.form.to_dict()
             ), 500
 
-    return render_template("admin/question_form.html", form_data={})
+    return None  # End of add_question_post
 
 
-@admin_bp.route("/question/<int:question_id>/edit", methods=["GET", "POST"])
+@admin_bp.route("/question/<int:question_id>/edit", methods=["GET"])
 @login_required
 @require_permission("edit_questions")
-def edit_question(question_id):
-    """Edit existing question."""
+def edit_question_get(question_id):
+    """Display edit question form."""
     question = Question.query.get_or_404(question_id)
+    return render_template("admin/question_form.html", question=question, form_data={})
 
-    if request.method == "POST":
+
+@admin_bp.route("/question/<int:question_id>/edit", methods=["POST"])
+@login_required
+@require_permission("edit_questions")
+def edit_question_post(question_id):
+    """Process question edit submission."""
+    question = Question.query.get_or_404(question_id)
+    if True:
         # Validate input
         is_valid, errors = validate_question_data(request.form)
         if not is_valid:
@@ -301,28 +317,24 @@ def edit_question(question_id):
                 form_data=request.form.to_dict()
             ), 500
 
-    return render_template("admin/question_form.html", question=question, form_data={})
+    return None  # End of edit_question_post
 
 
-@admin_bp.route("/question/<int:question_id>/delete", methods=["POST"])
-@login_required
-@require_permission("delete_questions")
-def delete_question(question_id):
-    """Delete question."""
-    question = Question.query.get_or_404(question_id)
-    db.session.delete(question)
-    db.session.commit()
-    return redirect(url_for("admin.index"))
-
-
-@admin_bp.route("/import", methods=["GET", "POST"])
+@admin_bp.route("/import", methods=["GET"])
 @login_required
 @require_permission("import_excel")
-def import_page():
-    """Excel import page."""
+def import_page_get():
+    """Display Excel import page."""
+    return render_template("admin/import_excel.html", results=None)
+
+
+@admin_bp.route("/import", methods=["POST"])
+@login_required
+@require_permission("import_excel")
+def import_page_post():
+    """Process Excel file import."""
     results = None
-    
-    if request.method == "POST":
+    if True:
         # Check if file was uploaded
         if "file" not in request.files:
             results = {"errors": ["No file selected"], "success": 0}
@@ -366,7 +378,7 @@ def download_template():
     template_path = os.path.join(template_dir, template_file)
     if not os.path.exists(template_path):
         flash("Template file not found. Please contact admin.", "error")
-        return redirect(url_for("admin.import_page"))
+        return redirect(url_for("admin.import_page_get"))
     
     return send_from_directory(template_dir, template_file, as_attachment=True)
 
