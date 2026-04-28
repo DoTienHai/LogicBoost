@@ -917,6 +917,113 @@ def import_from_excel(filepath):
 
 ---
 
+## 🛑 Error Handling & Error Codes
+
+### Error Constants Location
+**File:** `app/constants/error_codes.py`
+
+All error messages must be defined as constants in the `AuthError` class. Never hardcode error strings in services or routes.
+
+### Error Code Format
+```python
+class AuthError:
+    """Authentication error codes and messages."""
+    
+    USERNAME_EXISTS = {
+        "code": "USERNAME_EXISTS",           # Error code (used by frontend)
+        "status": 409,                       # HTTP status code
+        "message": "Username already exists" # User-facing message
+    }
+```
+
+### Error Code Categories
+
+| Status | Category | When to Use |
+|--------|----------|------------|
+| **400** | Bad Request | Validation errors (too short, invalid format, missing field) |
+| **401** | Unauthorized | Authentication errors (wrong password, account disabled) |
+| **403** | Forbidden | Authorization errors (already logged in, no permission) |
+| **404** | Not Found | Resource not found (user, role) |
+| **409** | Conflict | Conflict errors (duplicate username, email, role already assigned) |
+| **500** | Server Error | Unexpected exceptions during processing |
+
+### Backend — Using Error Constants
+
+**Services** (`app/services/auth_service.py`):
+```python
+from app.constants.error_codes import AuthError
+
+def register_user(...):
+    if User.query.filter_by(username=username).first():
+        return None, AuthError.USERNAME_EXISTS["message"]  # Use message
+    
+    try:
+        # ... process
+    except Exception as e:
+        db.session.rollback()
+        return None, AuthError.REGISTRATION_FAILED["message"]
+```
+
+**Routes** (`app/routes/auth.py`):
+```python
+from app.constants.error_codes import AuthError
+
+@auth_bp.route("/register", methods=["POST"])
+def register_submit():
+    user, error = AuthService.register_user(...)
+    
+    if error:
+        # Find error details by message
+        error_detail = AuthError.find_error_by_message(error)
+        return jsonify({
+            "success": False,
+            "error": error_detail["message"],
+            "code": error_detail["code"]     # Include error code
+        }), error_detail["status"]           # Use appropriate status code
+```
+
+### Frontend — Handling Error Codes
+
+```javascript
+fetch('/auth/register', {
+    method: 'POST',
+    body: formData
+})
+.then(res => res.json())
+.then(data => {
+    if (data.success) {
+        showToast('✓ Success', 'success');
+    } else {
+        // Handle by error code for better UX
+        switch(data.code) {
+            case 'USERNAME_EXISTS':
+                showToast('Username already taken', 'error');
+                break;
+            case 'EMAIL_EXISTS':
+                showToast('Email already registered', 'error');
+                break;
+            case 'PASSWORD_TOO_SHORT':
+                showToast('Password too short (min 6 chars)', 'error');
+                break;
+            default:
+                showToast(data.error, 'error');
+        }
+    }
+});
+```
+
+### Adding New Error Codes
+
+When adding a new error:
+1. Add constant to `AuthError` class in `app/constants/error_codes.py`
+2. Include: `code`, `status`, `message`
+3. Update service to return error message
+4. Update route to include error code in JSON response
+5. Update tests to check for error code
+6. Add frontend handler if needed
+
+---
+
 ## 🔧 Environment Variables (.env)
 ```
 FLASK_APP=run.py

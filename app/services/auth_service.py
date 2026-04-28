@@ -1,5 +1,6 @@
 """Authentication and authorization service."""
 from app.models import db, User, Role, Permission
+from app.constants.error_codes import AuthError
 from typing import Tuple, Optional
 
 
@@ -25,21 +26,21 @@ class AuthService:
         """
         # Validate inputs
         if not username or len(username) < 3:
-            return None, "Username must be at least 3 characters long"
+            return None, AuthError.USERNAME_TOO_SHORT["message"]
 
         if not email or "@" not in email:
-            return None, "Valid email address is required"
+            return None, AuthError.INVALID_EMAIL["message"]
 
         if not password or len(password) < 6:
-            return None, "Password must be at least 6 characters long"
+            return None, AuthError.PASSWORD_TOO_SHORT["message"]
 
         # Check username uniqueness
         if User.query.filter_by(username=username).first():
-            return None, "Username already exists"
+            return None, AuthError.USERNAME_EXISTS["message"]
 
         # Check email uniqueness
         if User.query.filter_by(email=email).first():
-            return None, "Email already registered"
+            return None, AuthError.EMAIL_EXISTS["message"]
 
         try:
             # Create new user
@@ -59,7 +60,7 @@ class AuthService:
             return user, None
         except Exception as e:
             db.session.rollback()
-            return None, f"Registration failed: {str(e)}"
+            return None, AuthError.REGISTRATION_FAILED["message"]
 
     @staticmethod
     def login_user(username: str, password: str) -> Tuple[Optional[User], Optional[str]]:
@@ -74,18 +75,18 @@ class AuthService:
             Tuple of (User object if valid, error message or None)
         """
         if not username or not password:
-            return None, "Username and password are required"
+            return None, AuthError.MISSING_CREDENTIALS["message"]
 
         user = User.query.filter_by(username=username).first()
 
         if not user:
-            return None, "Invalid username or password"
+            return None, AuthError.INVALID_CREDENTIALS["message"]
 
         if not user.is_active:
-            return None, "Account is disabled"
+            return None, AuthError.ACCOUNT_DISABLED["message"]
 
         if not user.verify_password(password):
-            return None, "Invalid username or password"
+            return None, AuthError.INVALID_CREDENTIALS["message"]
 
         return user, None
 
@@ -106,16 +107,16 @@ class AuthService:
         """
         user = User.query.get(user_id)
         if not user:
-            return False, "User not found"
+            return False, AuthError.USER_NOT_FOUND["message"]
 
         if not user.verify_password(old_password):
-            return False, "Current password is incorrect"
+            return False, AuthError.WRONG_OLD_PASSWORD["message"]
 
         if not new_password or len(new_password) < 6:
-            return False, "New password must be at least 6 characters long"
+            return False, AuthError.PASSWORD_TOO_SHORT["message"]
 
         if old_password == new_password:
-            return False, "New password must be different from current password"
+            return False, AuthError.SAME_PASSWORD["message"]
 
         try:
             user.set_password(new_password)
@@ -123,7 +124,7 @@ class AuthService:
             return True, None
         except Exception as e:
             db.session.rollback()
-            return False, f"Password change failed: {str(e)}"
+            return False, AuthError.PASSWORD_CHANGE_FAILED["message"]
 
     @staticmethod
     def assign_role(user_id: int, role_id: int) -> Tuple[bool, Optional[str]]:
@@ -139,14 +140,14 @@ class AuthService:
         """
         user = User.query.get(user_id)
         if not user:
-            return False, "User not found"
+            return False, AuthError.USER_NOT_FOUND["message"]
 
         role = Role.query.get(role_id)
         if not role:
-            return False, "Role not found"
+            return False, AuthError.ROLE_NOT_FOUND["message"]
 
         if role in user.roles:
-            return False, f"User already has role '{role.name}'"
+            return False, AuthError.ROLE_ALREADY_ASSIGNED["message"]
 
         try:
             user.roles.append(role)
@@ -154,7 +155,7 @@ class AuthService:
             return True, None
         except Exception as e:
             db.session.rollback()
-            return False, f"Failed to assign role: {str(e)}"
+            return False, AuthError.ROLE_ASSIGNMENT_FAILED["message"]
 
     @staticmethod
     def revoke_role(user_id: int, role_id: int) -> Tuple[bool, Optional[str]]:
@@ -170,14 +171,14 @@ class AuthService:
         """
         user = User.query.get(user_id)
         if not user:
-            return False, "User not found"
+            return False, AuthError.USER_NOT_FOUND["message"]
 
         role = Role.query.get(role_id)
         if not role:
-            return False, "Role not found"
+            return False, AuthError.ROLE_NOT_FOUND["message"]
 
         if role not in user.roles:
-            return False, f"User does not have role '{role.name}'"
+            return False, AuthError.ROLE_NOT_ASSIGNED["message"]
 
         try:
             user.roles.remove(role)
@@ -185,7 +186,7 @@ class AuthService:
             return True, None
         except Exception as e:
             db.session.rollback()
-            return False, f"Failed to revoke role: {str(e)}"
+            return False, AuthError.ROLE_REVOKE_FAILED["message"]
 
     @staticmethod
     def update_user(user_id: int, **kwargs) -> Tuple[bool, Optional[str]]:
@@ -201,7 +202,7 @@ class AuthService:
         """
         user = User.query.get(user_id)
         if not user:
-            return False, "User not found"
+            return False, AuthError.USER_NOT_FOUND["message"]
 
         allowed_fields = {"first_name", "last_name", "email"}
         for key, value in kwargs.items():
@@ -211,7 +212,7 @@ class AuthService:
             if key == "email" and value != user.email:
                 # Check email uniqueness if changing email
                 if User.query.filter_by(email=value).first():
-                    return False, "Email already registered"
+                    return False, AuthError.EMAIL_EXISTS["message"]
 
             setattr(user, key, value)
 
@@ -220,7 +221,7 @@ class AuthService:
             return True, None
         except Exception as e:
             db.session.rollback()
-            return False, f"Update failed: {str(e)}"
+            return False, AuthError.USER_UPDATE_FAILED["message"]
 
     @staticmethod
     def delete_user(user_id: int) -> Tuple[bool, Optional[str]]:
@@ -235,7 +236,7 @@ class AuthService:
         """
         user = User.query.get(user_id)
         if not user:
-            return False, "User not found"
+            return False, AuthError.USER_NOT_FOUND["message"]
 
         try:
             db.session.delete(user)
@@ -243,4 +244,4 @@ class AuthService:
             return True, None
         except Exception as e:
             db.session.rollback()
-            return False, f"Delete failed: {str(e)}"
+            return False, AuthError.USER_DELETE_FAILED["message"]

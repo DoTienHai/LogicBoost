@@ -8,12 +8,13 @@ class TestAuthRoutes:
     """Tests for authentication routes."""
 
     def test_register_page_get(self, client):
-        """Test register page loads."""
+        """Test register page loads with GET."""
         response = client.get("/auth/register")
         assert response.status_code == 200
+        assert b"Register" in response.data or b"Create Account" in response.data
 
-    def test_register_user_success(self, client, app):
-        """Test successful user registration via route."""
+    def test_register_user_success_post(self, client, app):
+        """Test successful user registration via POST returns JSON with 201."""
         response = client.post(
             "/auth/register",
             data={
@@ -23,26 +24,34 @@ class TestAuthRoutes:
                 "first_name": "John",
                 "last_name": "Doe",
             },
-            follow_redirects=True,
         )
 
-        assert response.status_code == 200
-        # Should redirect to login
-        assert b"login" in response.data or b"Log in" in response.data.lower()
+        # Should return JSON with 201 Created
+        assert response.status_code == 201
+        data = response.get_json()
+        assert data["success"] is True
+        assert "message" in data
+        assert "redirect" in data
+        assert "/auth/login" in data["redirect"]
 
+        # Verify user was created in database
         with app.app_context():
             user = User.query.filter_by(username="newuser").first()
             assert user is not None
             assert user.email == "new@example.com"
+            assert user.first_name == "John"
+            assert user.last_name == "Doe"
 
-    def test_register_duplicate_username(self, client, app):
-        """Test registration fails with duplicate username."""
+    def test_register_duplicate_username_post(self, client, app):
+        """Test registration fails with duplicate username returns JSON 409."""
+        # Create existing user
         with app.app_context():
             user = User(username="existing", email="existing@example.com")
             user.set_password("password123")
             db.session.add(user)
             db.session.commit()
 
+        # Try to register with duplicate username
         response = client.post(
             "/auth/register",
             data={
@@ -50,10 +59,112 @@ class TestAuthRoutes:
                 "email": "new@example.com",
                 "password": "password123",
             },
-            follow_redirects=True,
         )
 
-        assert b"already exists" in response.data or b"exists" in response.data.lower()
+        assert response.status_code == 409
+        data = response.get_json()
+        assert data["success"] is False
+        assert "error" in data
+        assert "code" in data
+        assert data["code"] == "USERNAME_EXISTS"
+        assert "already exists" in data["error"].lower()
+
+    def test_register_duplicate_email_post(self, client, app):
+        """Test registration fails with duplicate email returns JSON 409."""
+        # Create existing user
+        with app.app_context():
+            user = User(username="existing", email="existing@example.com")
+            user.set_password("password123")
+            db.session.add(user)
+            db.session.commit()
+
+        # Try to register with duplicate email
+        response = client.post(
+            "/auth/register",
+            data={
+                "username": "newuser",
+                "email": "existing@example.com",
+                "password": "password123",
+            },
+        )
+
+        assert response.status_code == 409
+        data = response.get_json()
+        assert data["success"] is False
+        assert "error" in data
+        assert "code" in data
+        assert data["code"] == "EMAIL_EXISTS"
+        assert "already registered" in data["error"].lower()
+
+    def test_register_short_password_post(self, client):
+        """Test registration fails with short password returns JSON 400."""
+        response = client.post(
+            "/auth/register",
+            data={
+                "username": "newuser",
+                "email": "new@example.com",
+                "password": "short",  # Less than 6 characters
+            },
+        )
+
+        assert response.status_code == 400
+        data = response.get_json()
+        assert data["success"] is False
+        assert "error" in data
+        assert "code" in data
+        assert data["code"] == "PASSWORD_TOO_SHORT"
+        assert "at least 6" in data["error"].lower()
+
+    def test_register_invalid_email_post(self, client):
+        """Test registration fails with invalid email returns JSON 400."""
+        response = client.post(
+            "/auth/register",
+            data={
+                "username": "newuser",
+                "email": "invalid-email",  # Missing @
+                "password": "password123",
+            },
+        )
+
+        assert response.status_code == 400
+        data = response.get_json()
+        assert data["success"] is False
+        assert "error" in data
+        assert "code" in data
+        assert data["code"] == "INVALID_EMAIL"
+        assert "email" in data["error"].lower()
+
+    def test_register_already_logged_in_post(self, client, app):
+        """Test registration fails when already logged in returns JSON 403."""
+        # Create and login a user
+        with app.app_context():
+            user = User(username="existing", email="existing@example.com")
+            user.set_password("password123")
+            db.session.add(user)
+            db.session.commit()
+
+        # Login
+        client.post(
+            "/auth/login",
+            data={"username": "existing", "password": "password123"},
+        )
+
+        # Try to register while logged in
+        response = client.post(
+            "/auth/register",
+            data={
+                "username": "newuser",
+                "email": "new@example.com",
+                "password": "password123",
+            },
+        )
+
+        assert response.status_code == 403
+        data = response.get_json()
+        assert data["success"] is False
+        assert "error" in data
+        assert "code" in data
+        assert data["code"] == "ALREADY_LOGGED_IN"
 
     def test_login_page_get(self, client):
         """Test login page loads."""

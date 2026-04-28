@@ -3,35 +3,51 @@ from flask import Blueprint, render_template, request, jsonify, redirect, url_fo
 from flask_login import login_user, logout_user, login_required, current_user
 from app.models import User, db
 from app.services.auth_service import AuthService
+from app.constants.error_codes import AuthError
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 
 
-@auth_bp.route("/register", methods=["GET", "POST"])
+@auth_bp.route("/register", methods=["GET"])
 def register():
-    """Register a new user."""
+    """Display registration form."""
     if current_user.is_authenticated:
         return redirect(url_for("main.index"))
     
-    if request.method == "POST":
-        username = request.form.get("username", "").strip()
-        email = request.form.get("email", "").strip()
-        password = request.form.get("password", "")
-        first_name = request.form.get("first_name", "").strip()
-        last_name = request.form.get("last_name", "").strip()
-        
-        user, error = AuthService.register_user(
-            username, email, password, first_name, last_name
-        )
-        
-        if error:
-            flash(error, "error")
-            return redirect(url_for("auth.register"))
-        
-        flash("Registration successful! Please log in.", "success")
-        return redirect(url_for("auth.login"))
-    
     return render_template("auth/register.html")
+
+
+@auth_bp.route("/register", methods=["POST"])
+def register_submit():
+    """Handle user registration submission."""
+    if current_user.is_authenticated:
+        error = AuthError.ALREADY_LOGGED_IN
+        return jsonify({"success": False, "error": error["message"], "code": error["code"]}), error["status"]
+    
+    username = request.form.get("username", "").strip()
+    email = request.form.get("email", "").strip()
+    password = request.form.get("password", "")
+    first_name = request.form.get("first_name", "").strip()
+    last_name = request.form.get("last_name", "").strip()
+    
+    user, error = AuthService.register_user(
+        username, email, password, first_name, last_name
+    )
+    
+    if error:
+        # Find error details including status code
+        error_detail = AuthError.find_error_by_message(error)
+        return jsonify({
+            "success": False,
+            "error": error_detail["message"],
+            "code": error_detail["code"]
+        }), error_detail["status"]
+    
+    return jsonify({
+        "success": True,
+        "message": "Registration successful! Please log in.",
+        "redirect": url_for("auth.login")
+    }), 201
 
 
 @auth_bp.route("/login", methods=["GET", "POST"])
@@ -107,7 +123,8 @@ def change_password():
         confirm_password = request.form.get("confirm_password", "")
         
         if new_password != confirm_password:
-            flash("New passwords do not match", "error")
+            error = AuthError.PASSWORDS_MISMATCH
+            flash(error["message"], "error")
             return redirect(url_for("auth.change_password"))
         
         success, error = AuthService.change_password(
