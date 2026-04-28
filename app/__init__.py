@@ -177,11 +177,9 @@ def init_auth_database():
         if view_users_perm and view_users_perm not in content_creator_role.permissions:
             content_creator_role.permissions.append(view_users_perm)
     
-    # User: view_questions permission only
-    if user_role:
-        view_questions_perm = Permission.query.filter_by(name="view_questions").first()
-        if view_questions_perm and view_questions_perm not in user_role.permissions:
-            user_role.permissions.append(view_questions_perm)
+    # User: regular users have no admin permissions (game-play only)
+    # No permissions assigned to 'user' role - they can only access public game routes.
+    _ = user_role  # role exists but has no permissions by design
     
     db.session.commit()
     

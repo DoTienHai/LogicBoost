@@ -70,7 +70,9 @@
                         <h3>Resources</h3>
                         <ul>
                             <li><a href="{{ url_for('main.index') }}">Home</a></li>
-                            <li><a href="{{ url_for('admin_questions.index') }}">Admin Panel</a></li>
+                            {% if current_user.is_authenticated and current_user.has_permission('view_questions') %}
+                                <li><a href="{{ url_for('admin_questions.index') }}">Admin Panel</a></li>
+                            {% endif %}
                             <li><a href="https://github.com/DoTienHai/LogicBoost" target="_blank">GitHub</a></li>
                         </ul>
                     </div>

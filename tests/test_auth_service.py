@@ -259,12 +259,12 @@ class TestUserPermissions:
     """Tests for permission checking."""
 
     def test_user_has_permission_via_role(self, app):
-        """Test user has permission through their role."""
+        """Test user has no admin permissions by default."""
         with app.app_context():
             user, _ = AuthService.register_user("testuser", "test@example.com", "password123")
 
-            # Default 'user' role should have view_questions permission
-            assert user.has_permission("view_questions")
+            # Default 'user' role has no admin permissions — game-play only
+            assert not user.has_permission("view_questions")
             assert not user.has_permission("create_questions")
 
     def test_admin_has_all_permissions(self, app):
