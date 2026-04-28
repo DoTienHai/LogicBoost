@@ -22,7 +22,7 @@
                         <li><a href="{{ url_for('mini_game.index') }}">⚡ Mini Game</a></li>
                         <li><a href="{{ url_for('real_world.index') }}">🌍 Real-world</a></li>
                         {% if current_user.is_authenticated and current_user.has_permission('view_questions') %}
-                            <li><a href="{{ url_for('admin.index') }}">⚙️ Admin</a></li>
+                            <li><a href="{{ url_for('admin_questions.index') }}">⚙️ Admin</a></li>
                         {% endif %}
                     </ul>
                     <div class="navbar-right" style="display: flex; align-items: center; gap: 1.5rem;">
@@ -70,7 +70,7 @@
                         <h3>Resources</h3>
                         <ul>
                             <li><a href="{{ url_for('main.index') }}">Home</a></li>
-                            <li><a href="{{ url_for('admin.index') }}">Admin Panel</a></li>
+                            <li><a href="{{ url_for('admin_questions.index') }}">Admin Panel</a></li>
                             <li><a href="https://github.com/DoTienHai/LogicBoost" target="_blank">GitHub</a></li>
                         </ul>
                     </div>

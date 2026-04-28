@@ -346,14 +346,14 @@
                     ➕ Create Question
                 {% endif %}
             </button>
-            <a href="{{ url_for('admin.index') }}" class="btn btn-secondary btn-large">Cancel</a>
+            <a href="{{ url_for('admin_questions.index') }}" class="btn btn-secondary btn-large">Cancel</a>
         </div>
     </form>
 </div>
 
 <script>
     // Set API URLs for admin.js
-    window.adminApiUrl = '{{ url_for("admin.index") }}';
+    window.adminApiUrl = '{{ url_for("admin_questions.index") }}';
 </script>
 <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
 {% endblock %}

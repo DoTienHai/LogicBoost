@@ -11,8 +11,8 @@
     <div class="admin-header" style="margin-bottom: 2rem;">
         <h1>👤 {{ user.username }}</h1>
         <div style="display: flex; gap: 0.75rem;">
-            <a href="{{ url_for('admin.edit_user', user_id=user.id) }}" class="btn btn-primary">✏️ Edit</a>
-            <a href="{{ url_for('admin.list_users') }}" class="btn btn-secondary">← Back to Users</a>
+            <a href="{{ url_for('admin_users.edit_user_get', user_id=user.id) }}" class="btn btn-primary">✏️ Edit</a>
+            <a href="{{ url_for('admin_users.list_users_get') }}" class="btn btn-secondary">← Back to Users</a>
         </div>
     </div>
 
@@ -77,7 +77,7 @@
                         {% if role.name == 'admin' %}🔴{% elif role.name == 'content_creator' %}🔵{% else %}🟢{% endif %}
                         {{ role.display_name }}
                     </span>
-                    <form method="POST" action="{{ url_for('admin.remove_role', user_id=user.id, role_id=role.id) }}" style="display: inline;">
+                    <form method="POST" action="{{ url_for('admin_users.remove_role', user_id=user.id, role_id=role.id) }}" style="display: inline;">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="btn btn-sm btn-danger" title="Remove role" style="padding: 0.15rem 0.5rem; font-size: 0.75rem;">×</button>
                     </form>
@@ -88,7 +88,7 @@
         {% endif %}
 
         <!-- Assign Role -->
-        <form method="POST" action="{{ url_for('admin.assign_role', user_id=user.id) }}" style="display: flex; gap: 0.75rem; align-items: flex-end;">
+        <form method="POST" action="{{ url_for('admin_users.assign_role', user_id=user.id) }}" style="display: flex; gap: 0.75rem; align-items: flex-end;">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="form-group" style="flex: 1; margin-bottom: 0;">
                 <label for="role_id">Assign Role</label>
@@ -110,7 +110,7 @@
     <div class="admin-card" style="border: 1px solid #e74c3c;">
         <h2 style="margin-bottom: 0.75rem; font-size: 1.1rem; color: #e74c3c;">⚠️ Danger Zone</h2>
         <p style="color: var(--gray); margin-bottom: 1rem;">This will permanently delete the user and all their data.</p>
-        <form method="POST" action="{{ url_for('admin.delete_user', user_id=user.id) }}"
+        <form method="POST" action="{{ url_for('admin_users.delete_user', user_id=user.id) }}"
               onsubmit="return confirm('Delete user {{ user.username }}? This cannot be undone.');">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="btn btn-danger">🗑️ Delete User</button>

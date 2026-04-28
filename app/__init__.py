@@ -60,14 +60,16 @@ def create_app(config_name: str = None) -> Flask:
     from app.routes.daily_challenge import daily_challenge_bp
     from app.routes.mini_game import mini_game_bp
     from app.routes.real_world import real_world_bp
-    from app.routes.admin import admin_bp
+    from app.routes.admin_questions import admin_questions_bp
+    from app.routes.admin_users import admin_users_bp
     
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(daily_challenge_bp)
     app.register_blueprint(mini_game_bp)
     app.register_blueprint(real_world_bp)
-    app.register_blueprint(admin_bp)
+    app.register_blueprint(admin_questions_bp)
+    app.register_blueprint(admin_users_bp)
     
     # Register error handlers
     @app.errorhandler(404)

@@ -24,7 +24,7 @@
     {% endwith %}
 
     <div class="admin-card">
-        <form id="user-form" method="POST" action="{% if user %}{{ url_for('admin.user_form', user_id=user.id) }}{% else %}{{ url_for('admin.user_form') }}{% endif %}" novalidate>
+        <form id="user-form" method="POST" action="{% if user %}{{ url_for('admin_users.edit_user_post', user_id=user.id) }}{% else %}{{ url_for('admin_users.create_user_post') }}{% endif %}" novalidate>
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
             <!-- Username -->
@@ -196,7 +196,7 @@
                     <span class="button-text">{% if user %}💾 Save Changes{% else %}➕ Create User{% endif %}</span>
                     <span class="spinner" id="form-spinner" style="display: none;"></span>
                 </button>
-                <a href="{{ url_for('admin.users') }}" class="btn btn-secondary">Cancel</a>
+                <a href="{{ url_for('admin_users.list_users_get') }}" class="btn btn-secondary">Cancel</a>
             </div>
         </form>
     </div>

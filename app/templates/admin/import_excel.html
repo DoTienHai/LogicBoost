@@ -56,7 +56,7 @@
                     </div>
                 </div>
 
-                <a href="{{ url_for('admin.download_template') }}" class="btn btn-download btn-large">
+                <a href="{{ url_for('admin_questions.download_template') }}" class="btn btn-download btn-large">
                     📥 Download Excel Template
                 </a>
                 
@@ -193,8 +193,8 @@
                 {% endif %}
 
                 <div class="result-actions">
-                    <a href="{{ url_for('admin.import_page') }}" class="btn btn-primary">⬆️ Upload Another File</a>
-                    <a href="{{ url_for('admin.index') }}" class="btn btn-secondary">➔ Go to Questions</a>
+                    <a href="{{ url_for('admin_questions.import_page_get') }}" class="btn btn-primary">⬆️ Upload Another File</a>
+                    <a href="{{ url_for('admin_questions.index') }}" class="btn btn-secondary">➔ Go to Questions</a>
                 </div>
             </div>
         </div>
@@ -204,7 +204,7 @@
 
     <!-- Footer Navigation -->
     <div class="import-footer">
-        <a href="{{ url_for('admin.index') }}" class="btn btn-link">← Back to Admin Dashboard</a>
+        <a href="{{ url_for('admin_questions.index') }}" class="btn btn-link">← Back to Admin Dashboard</a>
     </div>
 </div>
 
