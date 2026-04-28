@@ -35,13 +35,11 @@ def register_submit():
     )
     
     if error:
-        # Find error details including status code
-        error_detail = AuthError.find_error_by_message(error)
         return jsonify({
             "success": False,
-            "error": error_detail["message"],
-            "code": error_detail["code"]
-        }), error_detail["status"]
+            "error": error["message"],
+            "code": error["code"]
+        }), error["status"]
     
     return jsonify({
         "success": True,
@@ -63,7 +61,7 @@ def login():
         user, error = AuthService.login_user(username, password)
         
         if error:
-            flash(error, "error")
+            flash(error["message"], "error")
             return redirect(url_for("auth.login"))
         
         login_user(user)
@@ -103,7 +101,7 @@ def profile():
         )
         
         if error:
-            flash(error, "error")
+            flash(error["message"], "error")
         else:
             flash("Profile updated successfully!", "success")
             # Refresh current_user
@@ -132,7 +130,7 @@ def change_password():
         )
         
         if error:
-            flash(error, "error")
+            flash(error["message"], "error")
         else:
             flash("Password changed successfully!", "success")
             return redirect(url_for("auth.profile"))

@@ -38,7 +38,7 @@ class TestAuthServiceRegistration:
             )
 
             assert error is not None
-            assert "Username already exists" in error
+            assert "Username already exists" in error["message"]
             assert user is None
 
     def test_register_user_duplicate_email(self, app):
@@ -53,7 +53,7 @@ class TestAuthServiceRegistration:
             )
 
             assert error is not None
-            assert "Email already registered" in error
+            assert "Email already registered" in error["message"]
             assert user is None
 
     def test_register_user_invalid_username(self, app):
@@ -62,7 +62,7 @@ class TestAuthServiceRegistration:
             # Username too short
             user, error = AuthService.register_user("ab", "test@example.com", "password123")
             assert error is not None
-            assert "at least 3 characters" in error
+            assert "at least 3 characters" in error["message"]
             assert user is None
 
     def test_register_user_invalid_email(self, app):
@@ -70,7 +70,7 @@ class TestAuthServiceRegistration:
         with app.app_context():
             user, error = AuthService.register_user("testuser", "invalid-email", "password123")
             assert error is not None
-            assert "Valid email" in error
+            assert "Valid email" in error["message"]
             assert user is None
 
     def test_register_user_weak_password(self, app):
@@ -78,7 +78,7 @@ class TestAuthServiceRegistration:
         with app.app_context():
             user, error = AuthService.register_user("testuser", "test@example.com", "short")
             assert error is not None
-            assert "at least 6 characters" in error
+            assert "at least 6 characters" in error["message"]
             assert user is None
 
 
@@ -108,7 +108,7 @@ class TestAuthServiceLogin:
             user, error = AuthService.login_user("testuser", "wrongpassword")
 
             assert error is not None
-            assert "Invalid username or password" in error
+            assert "Invalid username or password" in error["message"]
             assert user is None
 
     def test_login_user_not_found(self, app):
@@ -117,7 +117,7 @@ class TestAuthServiceLogin:
             user, error = AuthService.login_user("nonexistent", "password123")
 
             assert error is not None
-            assert "Invalid username or password" in error
+            assert "Invalid username or password" in error["message"]
             assert user is None
 
     def test_login_inactive_user(self, app):
@@ -134,7 +134,7 @@ class TestAuthServiceLogin:
             logged_in_user, error = AuthService.login_user("testuser", "password123")
 
             assert error is not None
-            assert "Account is disabled" in error
+            assert "Account is disabled" in error["message"]
             assert logged_in_user is None
 
     def test_login_missing_credentials(self, app):
@@ -142,7 +142,7 @@ class TestAuthServiceLogin:
         with app.app_context():
             user, error = AuthService.login_user("", "")
             assert error is not None
-            assert "required" in error
+            assert "required" in error["message"]
             assert user is None
 
 
@@ -179,7 +179,7 @@ class TestAuthServicePassword:
             success, error = AuthService.change_password(user.id, "wrongpassword", "newpassword")
 
             assert not success
-            assert "Current password is incorrect" in error
+            assert "Current password is incorrect" in error["message"]
 
     def test_change_password_weak_new_password(self, app):
         """Test password change fails with weak new password."""
@@ -189,7 +189,7 @@ class TestAuthServicePassword:
             success, error = AuthService.change_password(user.id, "password123", "short")
 
             assert not success
-            assert "at least 6 characters" in error
+            assert "at least 6 characters" in error["message"]
 
     def test_change_password_same_as_old(self, app):
         """Test password change fails when new password is same as old."""
@@ -199,7 +199,7 @@ class TestAuthServicePassword:
             success, error = AuthService.change_password(user.id, "password123", "password123")
 
             assert not success
-            assert "must be different" in error
+            assert "must be different" in error["message"]
 
 
 class TestAuthServiceRoles:
@@ -227,7 +227,7 @@ class TestAuthServiceRoles:
             success, error = AuthService.assign_role(user.id, user_role.id)
 
             assert not success
-            assert "already has role" in error
+            assert "already has role" in error["message"]
 
     def test_revoke_role_success(self, app):
         """Test successful role revocation."""
@@ -252,7 +252,7 @@ class TestAuthServiceRoles:
             success, error = AuthService.revoke_role(user.id, admin_role.id)
 
             assert not success
-            assert "does not have role" in error
+            assert "does not have role" in error["message"]
 
 
 class TestUserPermissions:
@@ -323,7 +323,7 @@ class TestUserUpdate:
             success, error = AuthService.update_user(user2.id, email="test1@example.com")
 
             assert not success
-            assert "Email already registered" in error
+            assert "Email already registered" in error["message"]
 
 
 class TestUserDeletion:
@@ -350,4 +350,4 @@ class TestUserDeletion:
             success, error = AuthService.delete_user(9999)
 
             assert not success
-            assert "User not found" in error
+            assert "User not found" in error["message"]
