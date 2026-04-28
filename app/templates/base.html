@@ -33,10 +33,10 @@
                         <div class="auth-links" style="display: flex; gap: 1rem;">
                             {% if current_user.is_authenticated %}
                                 <span style="color: var(--dark); font-size: 0.9rem;">👤 {{ current_user.username }}</span>
-                                <a href="{{ url_for('auth.profile') }}" class="btn btn-sm btn-secondary">Profile</a>
+                                <a href="{{ url_for('auth.profile_get') }}" class="btn btn-sm btn-secondary">Profile</a>
                                 <a href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-secondary">Logout</a>
                             {% else %}
-                                <a href="{{ url_for('auth.login') }}" class="btn btn-sm btn-primary">Login</a>
+                                <a href="{{ url_for('auth.login_get') }}" class="btn btn-sm btn-primary">Login</a>
                                 <a href="{{ url_for('auth.register') }}" class="btn btn-sm btn-secondary">Sign Up</a>
                             {% endif %}
                         </div>

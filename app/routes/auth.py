@@ -48,36 +48,7 @@ def register_submit():
     }), 201
 
 
-@auth_bp.route("/login", methods=["GET", "POST"], endpoint="login")
-def login():
-    """Login endpoint (delegates to specific handlers)."""
-    if request.method == "GET":
-        return login_get()
-    else:
-        return login_post()
-
-
-@auth_bp.route("/profile", methods=["GET", "POST"], endpoint="profile")
-@login_required
-def profile():
-    """Profile endpoint (delegates to specific handlers)."""
-    if request.method == "GET":
-        return profile_get()
-    else:
-        return profile_post()
-
-
-@auth_bp.route("/change-password", methods=["GET", "POST"], endpoint="change_password")
-@login_required
-def change_password():
-    """Change password endpoint (delegates to specific handlers)."""
-    if request.method == "GET":
-        return change_password_get()
-    else:
-        return change_password_post()
-
-
-@auth_bp.route("/login", methods=["GET"], endpoint="login_get")
+@auth_bp.route("/login", methods=["GET"])
 def login_get():
     """Display login form."""
     if current_user.is_authenticated:
@@ -86,7 +57,7 @@ def login_get():
     return render_template("auth/login.html")
 
 
-@auth_bp.route("/login", methods=["POST"], endpoint="login_post")
+@auth_bp.route("/login", methods=["POST"])
 def login_post():
     """Process login submission."""
     if current_user.is_authenticated:
@@ -119,14 +90,14 @@ def logout():
     return redirect(url_for("main.index"))
 
 
-@auth_bp.route("/profile", methods=["GET"], endpoint="profile_get")
+@auth_bp.route("/profile", methods=["GET"])
 @login_required
 def profile_get():
     """Display user profile."""
     return render_template("auth/profile.html", user=current_user)
 
 
-@auth_bp.route("/profile", methods=["POST"], endpoint="profile_post")
+@auth_bp.route("/profile", methods=["POST"])
 @login_required
 def profile_post():
     """Update user profile."""
@@ -152,14 +123,14 @@ def profile_post():
     return render_template("auth/profile.html", user=current_user)
 
 
-@auth_bp.route("/change-password", methods=["GET"], endpoint="change_password_get")
+@auth_bp.route("/change-password", methods=["GET"])
 @login_required
 def change_password_get():
     """Display change password form."""
     return render_template("auth/change_password.html")
 
 
-@auth_bp.route("/change-password", methods=["POST"], endpoint="change_password_post")
+@auth_bp.route("/change-password", methods=["POST"])
 @login_required
 def change_password_post():
     """Process password change."""

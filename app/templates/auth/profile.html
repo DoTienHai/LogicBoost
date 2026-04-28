@@ -76,7 +76,7 @@
             <h2>✏️ Edit Profile</h2>
         </div>
 
-        <form id="profile-form" method="POST" action="{{ url_for('auth.profile') }}" novalidate>
+        <form id="profile-form" method="POST" action="{{ url_for('auth.profile_post') }}" novalidate>
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
             <div class="form-group">
@@ -134,7 +134,7 @@
         </div>
 
         <div class="collapsible-content" style="padding-top: 1.5rem;">
-            <form id="password-form" method="POST" action="{{ url_for('auth.change_password') }}" novalidate>
+            <form id="password-form" method="POST" action="{{ url_for('auth.change_password_post') }}" novalidate>
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
                 <div class="form-group required">
