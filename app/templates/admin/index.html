@@ -8,8 +8,10 @@
     <p>This is Admin Panel - Manage all questions</p>
 
     <div class="admin-actions">
-        <a href="{{ url_for('admin_questions.add_question_get') }}" class="btn btn-primary">Add New Question</a>
-        <a href="{{ url_for('admin_questions.import_page_get') }}" class="btn btn-primary">Import Excel</a>
+        {% if current_user.has_permission('create_questions') %}
+            <a href="{{ url_for('admin_questions.add_question_get') }}" class="btn btn-primary">Add New Question</a>
+            <a href="{{ url_for('admin_questions.import_page_get') }}" class="btn btn-primary">Import Excel</a>
+        {% endif %}
     </div>
 
     <div class="questions-table">
@@ -35,10 +37,14 @@
                             <td>{{ q.mode }}</td>
                             <td>{{ difficulty_map.get(q.difficulty, 'Unknown') }}</td>
                             <td>
-                                <a href="{{ url_for('admin_questions.edit_question_get', question_id=q.id) }}" class="btn btn-sm btn-secondary">Edit</a>
-                                <form method="POST" action="{{ url_for('admin_questions.delete_question', question_id=q.id) }}" style="display:inline;">
-                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete?')">Delete</button>
-                                </form>
+                                {% if current_user.has_permission('edit_questions') %}
+                                    <a href="{{ url_for('admin_questions.edit_question_get', question_id=q.id) }}" class="btn btn-sm btn-secondary">Edit</a>
+                                {% endif %}
+                                {% if current_user.has_permission('delete_questions') %}
+                                    <form method="POST" action="{{ url_for('admin_questions.delete_question', question_id=q.id) }}" style="display:inline;">
+                                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete?')">Delete</button>
+                                    </form>
+                                {% endif %}
                             </td>
                         </tr>
                     {% endfor %}

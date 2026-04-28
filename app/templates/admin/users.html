@@ -10,7 +10,9 @@
 <div class="admin-container" style="max-width: 1000px;">
     <div class="admin-header">
         <h1>👥 User Management</h1>
-        <a href="{{ url_for('admin_users.create_user_get') }}" class="btn btn-primary">➕ Create User</a>
+        {% if current_user.has_permission('create_users') %}
+            <a href="{{ url_for('admin_users.create_user_get') }}" class="btn btn-primary">➕ Create User</a>
+        {% endif %}
     </div>
 
     <!-- Flash messages -->
@@ -97,8 +99,12 @@
                             </td>
                             <td>{{ user.created_at.strftime('%b %d, %Y') if user.created_at else '-' }}</td>
                             <td>
-                                <a href="{{ url_for('admin_users.edit_user_get', user_id=user.id) }}" class="btn btn-sm btn-secondary">✏️</a>
-                                <button class="btn btn-sm btn-danger" onclick="deleteUser({{ user.id }}, '{{ user.username }}')">🗑️</button>
+                                {% if current_user.has_permission('edit_users') %}
+                                    <a href="{{ url_for('admin_users.edit_user_get', user_id=user.id) }}" class="btn btn-sm btn-secondary">✏️</a>
+                                {% endif %}
+                                {% if current_user.has_permission('delete_users') %}
+                                    <button class="btn btn-sm btn-danger" onclick="deleteUser({{ user.id }}, '{{ user.username }}')">🗑️</button>
+                                {% endif %}
                             </td>
                         </tr>
                     {% endfor %}
@@ -111,7 +117,9 @@
                     <h3>No users found</h3>
                     <p>Create your first user to get started</p>
                 </div>
-                <a href="{{ url_for('admin_users.create_user_get') }}" class="btn btn-primary">➕ Create User</a>
+                {% if current_user.has_permission('create_users') %}
+                    <a href="{{ url_for('admin_users.create_user_get') }}" class="btn btn-primary">➕ Create User</a>
+                {% endif %}
             </div>
         {% endif %}
     </div>

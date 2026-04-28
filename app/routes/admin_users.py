@@ -35,7 +35,7 @@ def view_user_get(user_id):
 def create_user_get():
     """Display create user form."""
     available_roles = Role.query.all()
-    return render_template("admin/user_form.html", available_roles=available_roles)
+    return render_template("admin/user_form.html", user=None, available_roles=available_roles, form_data={})
 
 
 @admin_users_bp.route("/users/create", methods=["POST"])
@@ -70,6 +70,7 @@ def create_user_post():
         available_roles = Role.query.all()
         return render_template(
             "admin/user_form.html",
+            user=None,
             errors=errors,
             available_roles=available_roles,
             form_data=request.form.to_dict()
@@ -84,6 +85,7 @@ def create_user_post():
         available_roles = Role.query.all()
         return render_template(
             "admin/user_form.html",
+            user=None,
             errors=[error["message"]],
             available_roles=available_roles,
             form_data=request.form.to_dict()

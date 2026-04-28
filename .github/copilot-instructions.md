@@ -61,7 +61,8 @@ LogicBoost/
 │   │   ├── daily_challenge.py              # Daily Challenge routes
 │   │   ├── mini_game.py                    # Quick Mini Game routes
 │   │   ├── real_world.py                   # Real-world Problem routes
-│   │   └── admin.py                        # Admin panel routes
+│   │   ├── admin_questions.py              # Admin question management routes
+│   │   └── admin_users.py                  # Admin user management routes
 │   │
 │   ├── models/
 │   │   ├── __init__.py
@@ -748,9 +749,136 @@ def update_stats(mode, is_correct):
 
 ---
 
+---
+
+## 🎫 Frontend Permission System
+
+### Permission Check in Templates
+
+All templates must verify user permissions before displaying admin features:
+
+```html
+<!-- Navigation link - only show to admin users -->
+{% if current_user.is_authenticated and current_user.has_permission('view_questions') %}
+    <li><a href="{{ url_for('admin_questions.index') }}">⚙️ Admin</a></li>
+{% endif %}
+
+<!-- Admin buttons - only show if user can create -->
+{% if current_user.has_permission('create_questions') %}
+    <a href="{{ url_for('admin_questions.add_question_get') }}" class="btn btn-primary">
+        Add New Question
+    </a>
+{% endif %}
+
+<!-- Edit/Delete actions - verify permission -->
+{% if current_user.has_permission('edit_questions') %}
+    <a href="{{ url_for('admin_questions.edit_question_get', question_id=q.id) }}" class="btn btn-sm">
+        Edit
+    </a>
+{% endif %}
+
+{% if current_user.has_permission('delete_questions') %}
+    <form method="POST" action="{{ url_for('admin_questions.delete_question', question_id=q.id) }}">
+        <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+    </form>
+{% endif %}
+```
+
+### User Model - Permission Check Method
+
+```python
+# In app/models/user.py
+class User(UserMixin, db.Model):
+    ...
+    def has_permission(self, permission_name):
+        """Check if user has a specific permission."""
+        for role in self.roles:
+            for permission in role.permissions:
+                if permission.name == permission_name:
+                    return True
+        return False
+```
+
+### Backend Route Protection
+
+All admin routes have `@require_permission` decorators:
+
+```python
+# In app/routes/admin_questions.py
+@admin_questions_bp.route("/question/new", methods=["GET"])
+@login_required
+@require_permission("create_questions")
+def add_question_get():
+    """Display add question form."""
+    return render_template("admin/question_form.html")
+```
+
+### Permission Hierarchy
+
+| Permission | Required Role | Used For |
+|-----------|---------------|----------|
+| `view_questions` | User+ | View admin dashboard |
+| `create_questions` | Content Creator+ | Add new questions |
+| `edit_questions` | Content Creator+ | Edit questions |
+| `delete_questions` | Admin | Delete questions |
+| `import_excel` | Content Creator+ | Import Excel file |
+| `view_users` | Admin | View user list |
+| `create_users` | Admin | Create new users |
+| `edit_users` | Admin | Edit user details |
+| `delete_users` | Admin | Delete users |
+| `assign_roles` | Admin | Manage user roles |
+| `manage_roles` | Admin | Create/edit roles |
+| `manage_permissions` | Admin | Create/edit permissions |
+
+### Frontend - Unauthorized Access Handling
+
+If user navigates directly to an admin URL without permission:
+1. Backend `@require_permission` decorator returns **403 Forbidden**
+2. User sees error page
+3. Backend logs unauthorized access attempt
+
+---
+
 ## 🛠️ Admin Panel
 
-### Routes (`routes/admin.py`)
+### Separated Blueprints
+
+Admin functionality is split into two blueprints for better organization:
+
+#### **Question Management** (`routes/admin_questions.py`)
+- Dashboard: `/admin/` - List all questions
+- Add question: `/admin/question/new` - Create new questions
+- Edit question: `/admin/question/<id>/edit` - Modify questions
+- Delete question: `/admin/question/<id>/delete` - Remove questions
+- Import Excel: `/admin/import` - Bulk import from Excel file
+- Download template: `/admin/import/template` - Get Excel template
+
+**Permissions Required:**
+- `view_questions` - Dashboard access
+- `create_questions` - Add/import questions
+- `edit_questions` - Modify questions
+- `delete_questions` - Delete questions
+- `import_excel` - Import Excel files
+
+#### **User Management** (`routes/admin_users.py`)
+- List users: `/admin/users` - View all users
+- View user: `/admin/users/<id>` - User details & roles
+- Create user: `/admin/users/create` - Register new user
+- Edit user: `/admin/users/<id>/edit` - Update user info
+- Delete user: `/admin/users/<id>/delete` - Remove user
+- Assign role: `/admin/users/<id>/assign-role` - Add role to user
+- Remove role: `/admin/users/<id>/remove-role/<role_id>` - Remove role
+
+**Permissions Required:**
+- `view_users` - List users
+- `create_users` - Create users
+- `edit_users` - Edit user details
+- `delete_users` - Delete users
+- `assign_roles` - Manage user roles
+
+### Admin Panel Routes
+
+#### Question Routes
 | Method | Route | Description |
 |--------|-------|-------------|
 | GET | `/admin` | Dashboard — question list |
@@ -758,10 +886,23 @@ def update_stats(mode, is_correct):
 | POST | `/admin/question/new` | Save new question to DB |
 | GET | `/admin/question/<id>/edit` | Form to edit a question |
 | POST | `/admin/question/<id>/edit` | Update question |
-| GET | `/admin/question/<id>/delete` | Delete question |
+| POST | `/admin/question/<id>/delete` | Delete question |
 | GET | `/admin/import` | Excel upload page |
 | POST | `/admin/import` | Process Excel file → import to DB |
 | GET | `/admin/import/template` | Download Excel template |
+
+#### User Routes
+| Method | Route | Description |
+|--------|-------|-------------|
+| GET | `/admin/users` | List all users |
+| GET | `/admin/users/<id>` | View user details |
+| GET | `/admin/users/create` | Create user form |
+| POST | `/admin/users/create` | Save new user |
+| GET | `/admin/users/<id>/edit` | Edit user form |
+| POST | `/admin/users/<id>/edit` | Update user |
+| POST | `/admin/users/<id>/delete` | Delete user |
+| POST | `/admin/users/<id>/assign-role` | Assign role to user |
+| POST | `/admin/users/<id>/remove-role/<role_id>` | Remove role from user |
 
 ### Add Question Form (`admin/question_form.html`)
 ```

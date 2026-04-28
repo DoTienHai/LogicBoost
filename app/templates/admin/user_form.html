@@ -35,7 +35,7 @@
                     id="username"
                     name="username"
                     placeholder="3-20 characters, letters and numbers"
-                    value="{{ user.username or '' }}"
+                    value="{{ (user.username if user else (form_data.username if form_data else '')) or '' }}"
                     required
                     minlength="3"
                     maxlength="20"
@@ -55,7 +55,7 @@
                     id="email"
                     name="email"
                     placeholder="user@example.com"
-                    value="{{ user.email or '' }}"
+                    value="{{ (user.email if user else (form_data.email if form_data else '')) or '' }}"
                     required
                     autocomplete="email"
                 >
@@ -70,7 +70,7 @@
                     id="first-name"
                     name="first_name"
                     placeholder="User's first name"
-                    value="{{ user.first_name or '' }}"
+                    value="{{ (user.first_name if user else (form_data.first_name if form_data else '')) or '' }}"
                     autocomplete="given-name"
                 >
             </div>
@@ -83,7 +83,7 @@
                     id="last-name"
                     name="last_name"
                     placeholder="User's last name"
-                    value="{{ user.last_name or '' }}"
+                    value="{{ (user.last_name if user else (form_data.last_name if form_data else '')) or '' }}"
                     autocomplete="family-name"
                 >
             </div>

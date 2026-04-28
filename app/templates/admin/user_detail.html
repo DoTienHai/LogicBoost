@@ -11,7 +11,9 @@
     <div class="admin-header" style="margin-bottom: 2rem;">
         <h1>👤 {{ user.username }}</h1>
         <div style="display: flex; gap: 0.75rem;">
-            <a href="{{ url_for('admin_users.edit_user_get', user_id=user.id) }}" class="btn btn-primary">✏️ Edit</a>
+            {% if current_user.has_permission('edit_users') %}
+                <a href="{{ url_for('admin_users.edit_user_get', user_id=user.id) }}" class="btn btn-primary">✏️ Edit</a>
+            {% endif %}
             <a href="{{ url_for('admin_users.list_users_get') }}" class="btn btn-secondary">← Back to Users</a>
         </div>
     </div>

@@ -294,6 +294,7 @@ class TestAdminEditUser:
             db.session.add(user2)
             db.session.commit()
             user1_id = user1.id
+            user2_id = user2.id
         
         # Try to change user2 email to user1's email
         form_data = {
@@ -302,7 +303,7 @@ class TestAdminEditUser:
             "email": "user1@example.com",  # user1's email
         }
         
-        response = client.post(f"/admin/users/{user1_id}/edit", data=form_data)
+        response = client.post(f"/admin/users/{user2_id}/edit", data=form_data)
         
         # Should return 400 with errors
         assert response.status_code == 400
@@ -342,8 +343,18 @@ class TestAdminDeleteUser:
         """Test that the last admin user cannot be deleted."""
         create_admin_and_login(client, app)
         
-        # Get the admin user
+        # Remove any other admin users so admin_test is the only admin
         with app.app_context():
+            admin_role = Role.query.filter_by(name="admin").first()
+            other_admins = (
+                User.query.join(User.roles)
+                .filter(Role.id == admin_role.id, User.username != "admin_test")
+                .all()
+            )
+            for other in other_admins:
+                db.session.delete(other)
+            db.session.commit()
+            
             admin_user = User.query.filter_by(username="admin_test").first()
             user_id = admin_user.id
         
