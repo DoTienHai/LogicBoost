@@ -990,15 +990,21 @@ if success:
 
 ### Form Handling Pattern
 
+Clean approach: **One function = One HTTP method**
+
 ```python
-# GET: Display empty form
+# GET: Display form
 @bp.route("/form", methods=["GET"])
 def form_get():
+    """Display the form."""
     return render_template("form.html", form_data={})
 
-# POST: Validate and process
+
+# POST: Process form submission
 @bp.route("/form", methods=["POST"])
 def form_post():
+    """Process form submission."""
+    # Validate
     is_valid, errors = validate_data(request.form)
     
     if not is_valid:
@@ -1007,21 +1013,59 @@ def form_post():
     # Process...
     
     flash("Success!", "success")
-    return redirect(url_for("bp.form_get"))
+    return redirect(url_for("bp.form_get"))  # Redirect to display version
 ```
 
-### Current Status
+In templates, use specific endpoints:
+```html
+<!-- Form with specific action -->
+<form method="POST" action="{{ url_for('bp.form_post') }}" novalidate>
+    ...
+</form>
 
-✅ **auth.py** - Fully separated:
-- `login_get()` / `login_post()`
-- `profile_get()` / `profile_post()`
-- `change_password_get()` / `change_password_post()`
+<!-- Links to form -->
+<a href="{{ url_for('bp.form_get') }}">Edit</a>
+```
 
-🟡 **admin.py** - Partially separated:
+**Why no delegation wrapper?**
+- ❌ Adds unnecessary indirection
+- ❌ Makes debugging harder
+- ✅ Each function has clear single purpose
+- ✅ Simpler for testing
+- ✅ Easier to read and maintain
+
+### Current Status & Implementation
+
+✅ **auth.py** - Fully implemented (clean pattern):
+```python
+# Each function handles ONE HTTP method only
+@auth_bp.route("/login", methods=["GET"])
+def login_get():
+    return render_template("auth/login.html")
+
+@auth_bp.route("/login", methods=["POST"])
+def login_post():
+    # Process login
+    return redirect(url_for("auth.profile_get"))
+```
+
+- `login_get()` (GET) / `login_post()` (POST) ✅
+- `profile_get()` (GET) / `profile_post()` (POST) ✅
+- `change_password_get()` (GET) / `change_password_post()` (POST) ✅
+- `register()` (GET) / `register_submit()` (POST) ✅
+
+✅ **Templates** - Updated:
+- All `url_for()` calls use specific endpoints: `url_for('auth.login_get')` not `url_for('auth.login')`
+- Form actions specify POST endpoint: `action="{{ url_for('auth.login_post') }}"`
+
+✅ **Configuration** - Updated:
+- Flask-Login `login_view` set to `"auth.login_get"` (not `"auth.login"`)
+
+🟡 **admin.py** - Partially implemented:
 - `add_question_get()` / `add_question_post()` ✅
 - `edit_question_get()` / `edit_question_post()` ✅
 - `import_page_get()` / `import_page_post()` ✅
-- `user_form()` - **TODO**: Split into `user_create_get/post()` and `user_edit_get/post()`
+- `user_form()` - Split needed: `user_create_get/post()` and `user_edit_get/post()`
 
 ---
 
